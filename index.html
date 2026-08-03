@@ -442,7 +442,7 @@
   <div class="wrap">
     <span class="eyebrow">Live demo</span>
     <h2 class="h2c">See how fast we reply.</h2>
-    <p class="lead">This form <em style="font-style:normal;font-weight:700;color:var(--ink)">is</em> the product. Pretend you're a customer looking to get a braces consultation — fill it in with your <strong>real mobile</strong>, hit submit, and start counting. Your phone rings in about 30 seconds, exactly like it would for your patients.</p>
+    <p class="lead">This form <em style="font-style:normal;font-weight:700;color:var(--ink)">is</em> the product. Pretend you're a customer looking to get a braces consultation — fill it in with your <strong>real mobile</strong>, hit submit, and start counting. Your phone rings within 30 seconds, exactly like it would for your patients.</p>
     <div class="try-steps">
       <i><span class="d">1</span> Fill it in as the patient</i>
       <i><span class="d">2</span> Hit submit &amp; watch the clock</i>
@@ -456,7 +456,7 @@
 
         <div class="tslf-promise">
           <span class="tslf-dot" aria-hidden="true"></span>
-          <span id="tslf-promise-text">A real call, not an email — your phone rings <b>in about 30 seconds</b>.</span>
+          <span id="tslf-promise-text">A real call, not an email — your phone rings <b>within 30 seconds</b>.</span>
         </div>
 
         <div class="tslf-alert" id="tslf-alert" role="alert">
@@ -518,7 +518,7 @@
           </div>
 
           <button class="tslf-btn" type="submit" id="tslf-submit">
-            <span id="tslf-submit-label">Call me in 30 seconds</span>
+            <span id="tslf-submit-label">Call me within 30 seconds</span>
             <svg id="tslf-submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           </button>
 
@@ -555,7 +555,13 @@
     trading_name: "ThirtySecondLead",
     timezone: "Australia/Melbourne",
     services: ["Braces consult","Invisalign","Veneers","Teeth whitening","General check-up"],
-    webhook: "",            /* ← paste the n8n webhook URL here to go live. Empty = simulate. */
+    /* Live n8n endpoint. Blank it to fall back to simulate mode. */
+    webhook: "https://lucassomadjaja.app.n8n.cloud/webhook/lead-intake",
+    /* Public by design: this key ships inside the page source, so treat it
+       as known to everyone. It is a kill switch — rotate it in n8n and any
+       scraped copy dies — not a secret. What actually stops abuse is the
+       rate limit on the n8n side: 3 calls per number per hour, 40 a day. */
+    key: "tsldemo_pub_8f3Kq7vR2mXbN4pL",
     min_seconds: 3
   };
   var CONSENT_VERSION = "tsl-demo-consent-2026-08-v1";
@@ -598,16 +604,16 @@
     try{
       var parts = new Intl.DateTimeFormat("en-AU",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());
       for(var i=0;i<parts.length;i++) p[parts[i].type] = parts[i].value;
-    }catch(e){ return {open:true, text:"in about 30 seconds"}; }
+    }catch(e){ return {open:true, text:"within 30 seconds"}; }
     var mins = (+p.hour)*60 + (+p.minute);
-    if(mins >= 540 && mins < 1200) return {open:true, text:"in about 30 seconds"};
+    if(mins >= 540 && mins < 1200) return {open:true, text:"within 30 seconds"};
     if(mins < 540) return {open:false, text:"at 9am this morning"};
     return {open:false, text:"at 9am tomorrow"};
   }
   var win = callWindow(DEMO.timezone);
   if(!win.open){
     $("tslf-promise-text").innerHTML = "It's outside polite calling hours right now, so we'll ring you <b>" + win.text + "</b>.";
-    $("tslf-submit-label").textContent = "Call me " + win.text.replace("at ","at ");
+    $("tslf-submit-label").textContent = "Call me " + win.text;
   }
 
   function esc(s){
@@ -732,6 +738,7 @@
 
     var payload = Object.assign({
       clinic_id:            DEMO.clinic_id,
+      tsl_key:              DEMO.key,
       first_name:           first,
       last_name:            last,
       full_name:            first + " " + last,
@@ -772,13 +779,32 @@
     var timer = setTimeout(function(){ ctrl.abort(); }, 12000);
     fetch(DEMO.webhook, {
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      /* text/plain keeps this a CORS "simple request": no OPTIONS preflight,
+         no custom header, nothing between hitting submit and the phone
+         ringing that we cannot test. n8n parses the JSON string its end. */
+      headers:{"Content-Type":"text/plain;charset=UTF-8"},
       body:JSON.stringify(payload),
       signal:ctrl.signal
     }).then(function(res){
       clearTimeout(timer);
-      if(!res.ok) throw new Error("HTTP " + res.status);
-      showDone();
+      return res.text().then(function(text){
+        var data = {};
+        try{ data = JSON.parse(text); }catch(e){}
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        return data;
+      });
+    }).then(function(verdict){
+      /* The workflow answers honestly: dialling, queued, or refused.
+         Running a stopwatch for a call that was never placed would be the
+         one lie this entire page exists to disprove. */
+      if(verdict && verdict.status === "rejected"){
+        setLoading(false);
+        $("tslf-alert-text").innerHTML = refusalMessage(verdict.reason);
+        $("tslf-alert").classList.add("on");
+        $("tslf-alert").scrollIntoView({block:"center", behavior:"smooth"});
+        return;
+      }
+      showDone(verdict);
     }).catch(function(){
       setLoading(false);
       $("tslf-alert-text").innerHTML = 'We couldn\'t send that just now. Please try again, or email <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>.';
@@ -800,17 +826,43 @@
       $("tslf-submit-label").textContent = "Connecting…";
     }else{
       var sp = $("tslf-spinner"); if(sp) sp.remove();
-      $("tslf-submit-label").textContent = "Call me in 30 seconds";
+      $("tslf-submit-label").textContent = "Call me within 30 seconds";
     }
   }
 
-  function showDone(){
+  function refusalMessage(reason){
+    var M = {
+      no_consent:                  "We need that permission tick before the assistant can ring you.",
+      consent_expired:             "That permission has lapsed — tick it again and resubmit.",
+      not_a_valid_au_number:       "That doesn't look like an Australian number we can ring. Try 0412 345 678.",
+      service_number_not_dialable: "That's a 1300 or 1800 number — use a personal mobile.",
+      bot_suspected:               "That came through too fast for us to be sure it was a person. Give it another go."
+    };
+    return (M[reason] || "We couldn't place that call just now.") +
+           ' Or email <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>.';
+  }
+
+  function showDone(verdict){
+    verdict = verdict || {};
     $("tslf-form-wrap").style.display = "none";
     var d = $("tslf-done");
     d.classList.add("on");
-    if(!win.open){
-      $("tslf-done-h").textContent = "Got it — you're locked in";
-      $("tslf-done-p").textContent = "We'll ring you " + win.text + ". Keep an eye out.";
+
+    /* Trust the workflow when it has spoken; fall back to this page's own
+       calling-window guess only in simulate mode. */
+    var dialling = verdict.status ? verdict.status === "dialling" : win.open;
+    var reason   = verdict.reason || "";
+
+    if(!dialling){
+      var limited = reason.indexOf("demo_") === 0;
+      $("tslf-done-h").textContent = limited
+        ? "That's the demo limit"
+        : "Got it — you're locked in";
+      $("tslf-done-p").textContent = limited
+        ? (reason === "demo_number_limit"
+             ? "This mobile has already had a few demo calls in the last hour. Give it a little while, or book a call and I'll walk you through it properly."
+             : "The demo line has hit its cap for today. Book a call and I'll show you it live.")
+        : "We'll ring you " + win.text + ". Keep an eye out.";
       $("tslf-timer").style.display = "none";
       document.querySelector(".tslf-timer-cap").style.display = "none";
     }else{
