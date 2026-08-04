@@ -59,6 +59,31 @@
   .btn-primary:hover{background:var(--coral-d);transform:translateY(-2px)}
   .btn-sm{padding:11px 20px;font-size:.94rem;border-radius:9px}
 
+  /* ---------- shared: mobile menu + a11y (matches index.html) ---------- */
+  .mnav{display:none;position:relative}
+  .mnav>summary{list-style:none;cursor:pointer;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);
+    background:#fff;display:grid;place-content:center;gap:5px;transition:border-color .15s ease}
+  .mnav>summary::-webkit-details-marker{display:none}
+  .mnav>summary span{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .2s ease,opacity .2s ease}
+  .mnav[open]>summary{border-color:var(--teal)}
+  .mnav[open]>summary span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .mnav[open]>summary span:nth-child(2){opacity:0}
+  .mnav[open]>summary span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .mnav-panel{position:absolute;right:0;top:calc(100% + 10px);min-width:224px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 8px 24px rgba(14,36,39,.08),0 24px 64px rgba(14,36,39,.09);padding:8px;
+    display:flex;flex-direction:column;z-index:70}
+  .mnav-panel a{padding:12px 14px;border-radius:9px;font-weight:600;font-size:.97rem;color:var(--ink)}
+  .mnav-panel a:hover{background:var(--teal-tint);color:var(--teal)}
+  .mnav-panel .sep{height:1px;background:var(--line);margin:7px 6px}
+  @media(max-width:820px){.mnav{display:block}}
+  a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+    outline:3px solid rgba(0,120,120,.45);outline-offset:2px;border-radius:6px}
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  }
+
+  
   header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.86);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:74px;gap:20px}
   .brand{display:flex;align-items:center;gap:11px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.14rem;letter-spacing:-.025em}
@@ -106,6 +131,10 @@
   footer .legal{margin-top:24px;font-size:.8rem;color:#6b8589;max-width:820px;line-height:1.7}
   footer .legal a{color:#93aeb1;text-decoration:underline}
   footer .legal a:hover{color:#fff}
+
+  /* the desktop rule above hides every non-button link in .nav-links, which also
+     caught the mobile panel's links — this out-specifies it */
+  .nav-links .mnav-panel a{display:block}
 </style>
 </head>
 <body>
@@ -117,7 +146,19 @@
       <a href="index.html#how">How it works</a>
       <a href="index.html#features">What you get</a>
       <a href="index.html#faq">FAQ</a>
+      <a href="contact.html">Contact</a>
       <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Book a call</a>
+      <details class="mnav">
+        <summary aria-label="Open menu" title="Menu"><span></span><span></span><span></span></summary>
+        <div class="mnav-panel">
+          <a href="index.html#how">How it works</a>
+          <a href="index.html#demo">Try it live</a>
+          <a href="index.html#features">What you get</a>
+          <a href="index.html#faq">FAQ</a>
+          <div class="sep"></div>
+          <a href="contact.html">Contact</a>
+        </div>
+      </details>
     </nav>
   </div>
 </header>
@@ -154,7 +195,7 @@
         <dd>121 Bouverie St, Carlton VIC 3053, Australia</dd>
 
         <dt>Email</dt>
-        <dd><a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a></dd>
+        <dd><a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a> &nbsp;·&nbsp; <a href="contact.html">contact form</a></dd>
 
         <dt>Website</dt>
         <dd><a href="https://thirtysecondlead.com">thirtysecondlead.com</a></dd>
@@ -193,6 +234,7 @@
     <div class="top">
       <a href="index.html" class="brand"><img src="logo.png" alt="ThirtySecondLead"><span>ThirtySecondLead</span></a>
       <div class="flinks">
+        <a href="contact.html">Contact</a>
         <a href="legal.html">Business &amp; legal</a>
         <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>
         <span>Australia</span>

@@ -11,7 +11,7 @@
 <title>ThirtySecondLead — New-patient enquiries, called back in 30 seconds</title>
 <meta name="description" content="An AI assistant for Australian cosmetic &amp; dental clinics that instantly calls, qualifies and books your new leads — 24/7 — so you stop losing them to slow follow-up.">
 <meta property="og:title" content="ThirtySecondLead — your leads, called back in 30 seconds">
-<meta property="og:description" content="AI lead-response &amp; appointment setting for cosmetic &amp; dental clinics. Start with a free pilot.">
+<meta property="og:description" content="AI lead-response &amp; appointment setting for cosmetic &amp; dental clinics. First month free for our first five clinics — no credit card.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://thirtysecondlead.com/">
 <meta property="og:image" content="https://thirtysecondlead.com/og-image.png">
@@ -21,6 +21,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://thirtysecondlead.com/og-image.png">
 <meta name="theme-color" content="#007878">
+<link rel="canonical" href="https://thirtysecondlead.com/">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -82,6 +83,31 @@
   .nav-links{display:flex;align-items:center;gap:30px;font-size:.95rem;font-weight:500;color:var(--grey)}
   .nav-links a:not(.btn):hover{color:var(--teal)}
   @media(max-width:820px){.nav-links a:not(.btn){display:none}.nav{height:66px}.brand span{display:none}.brand img{height:34px}}
+
+  /* ---------- mobile menu (CSS only, <details>) ---------- */
+  .mnav{display:none;position:relative}
+  .mnav>summary{list-style:none;cursor:pointer;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);
+    background:#fff;display:grid;place-content:center;gap:5px;transition:border-color .15s ease}
+  .mnav>summary::-webkit-details-marker{display:none}
+  .mnav>summary span{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .2s ease,opacity .2s ease}
+  .mnav[open]>summary{border-color:var(--teal)}
+  .mnav[open]>summary span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .mnav[open]>summary span:nth-child(2){opacity:0}
+  .mnav[open]>summary span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .mnav-panel{position:absolute;right:0;top:calc(100% + 10px);min-width:224px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:var(--shadow-l);padding:8px;display:flex;flex-direction:column;z-index:70}
+  .mnav-panel a{padding:12px 14px;border-radius:9px;font-weight:600;font-size:.97rem;color:var(--ink)}
+  .mnav-panel a:hover{background:var(--teal-tint);color:var(--teal)}
+  .mnav-panel .sep{height:1px;background:var(--line);margin:7px 6px}
+  @media(max-width:820px){.mnav{display:block}}
+
+  /* ---------- accessibility ---------- */
+  a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+    outline:3px solid rgba(0,120,120,.45);outline-offset:2px;border-radius:6px}
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  }
 
   /* ---------- hero ---------- */
   .hero{position:relative;overflow:hidden;background:linear-gradient(168deg,var(--teal-tint) 0%,#fff 62%);padding:78px 0 64px}
@@ -198,6 +224,14 @@
   .offer > *{position:relative;z-index:1}
   .offer h2{color:#fff;font-size:2.1rem;margin-bottom:15px;letter-spacing:-.03em}
   .offer p{color:#c9e6e6;font-size:1.1rem;max-width:620px;margin:0 auto 30px}
+  .offer-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);color:#fff;
+    border:1px solid rgba(255,255,255,.22);font-weight:600;font-size:.8rem;padding:7px 15px;border-radius:30px;
+    margin-bottom:20px;letter-spacing:.02em}
+  .offer-tag .dot{width:7px;height:7px;border-radius:50%;background:var(--lime)}
+  .offer-points{display:flex;gap:12px 30px;flex-wrap:wrap;justify-content:center;margin:0 0 30px}
+  .offer-points i{display:inline-flex;align-items:center;gap:9px;font-style:normal;font-size:.96rem;font-weight:600;color:#eaf6f6}
+  .offer-points svg{width:17px;height:17px;color:var(--lime);flex:none}
+  .offer-fine{color:#9fcaca !important;font-size:.93rem !important;margin:22px auto 0 !important;max-width:540px}
   @media(max-width:820px){.offer{padding:44px 26px;border-radius:20px}.offer h2{font-size:1.6rem}.offer p{font-size:1rem}}
 
   /* who for */
@@ -334,6 +368,7 @@
     font-size:3rem;font-weight:800;letter-spacing:-.02em;color:var(--teal);line-height:1;margin:16px 0 4px;
   }
   .tslf-timer-cap{font-size:.83rem;color:var(--f-ink-soft);margin-bottom:4px}
+  .tslf-split{font-size:.8rem;color:var(--f-ink-soft);margin-top:10px;line-height:1.5}
   .tslf-num{font-size:1rem;font-weight:700;color:var(--f-ink);background:var(--f-bg-sunken);border:1px solid var(--f-line);border-radius:var(--f-radius-sm);padding:11px 14px;margin-top:14px}
   .try-steps{display:flex;gap:14px 34px;flex-wrap:wrap;justify-content:center;margin:0 auto 44px;max-width:760px}
   .try-steps i{display:inline-flex;align-items:center;gap:10px;font-style:normal;font-size:.95rem;font-weight:600;color:var(--ink-2)}
@@ -341,6 +376,10 @@
   .try-steps i:nth-child(2) .d{background:var(--coral)}
   .try-steps i:nth-child(3) .d{background:var(--lime);color:#1d3a08}
   @media(max-width:640px){.try-steps{flex-direction:column;align-items:flex-start;gap:10px}}
+
+  /* the desktop rule above hides every non-button link in .nav-links, which also
+     caught the mobile panel's links — this out-specifies it */
+  .nav-links .mnav-panel a{display:block}
 </style>
 </head>
 <body>
@@ -353,7 +392,19 @@
       <a href="#demo">Try it live</a>
       <a href="#features">What you get</a>
       <a href="#faq">FAQ</a>
+      <a href="contact.html">Contact</a>
       <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Book a call</a>
+      <details class="mnav">
+        <summary aria-label="Open menu" title="Menu"><span></span><span></span><span></span></summary>
+        <div class="mnav-panel">
+          <a href="#how">How it works</a>
+          <a href="#demo">Try it live</a>
+          <a href="#features">What you get</a>
+          <a href="#faq">FAQ</a>
+          <div class="sep"></div>
+          <a href="contact.html">Contact</a>
+        </div>
+      </details>
     </nav>
   </div>
 </header>
@@ -370,7 +421,7 @@
       </div>
       <p class="micro">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-        Free pilot on your existing leads — no cost, no lock-in.
+        First month free for our first five clinics — no credit card, no lock-in.
       </p>
     </div>
 
@@ -411,7 +462,7 @@
   <div class="wrap">
     <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ACMA-compliant calling</i>
     <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg> Australian owned &amp; operated</i>
-    <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Do Not Call Register washed</i>
+    <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> A real person, one sentence away</i>
     <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg> No lock-in contracts</i>
   </div>
 </div>
@@ -429,9 +480,9 @@
   <div class="wrap">
     <span class="eyebrow">How it works</span>
     <h2 class="h2c">Three steps. Zero leads left waiting.</h2>
-    <p class="lead">It plugs into the leads you already get — from your ads, your website, or the pile of old enquiries sitting in your system.</p>
+    <p class="lead">It plugs into the enquiries you already get — from your ads and your website — and reaches them while your clinic is still the one they were thinking about.</p>
     <div class="steps">
-      <div class="step"><div class="num">1</div><h3>A patient enquires</h3><p>Through your Facebook or Instagram ad, your website form, or an old lead already in your database.</p></div>
+      <div class="step"><div class="num">1</div><h3>A patient enquires</h3><p>Through your Facebook or Instagram ad, your website form, or your Google listing. The moment they hit send, we know.</p></div>
       <div class="step"><div class="num">2</div><h3>We call in ~30 seconds</h3><p>A natural-sounding AI assistant greets them, answers the basics, and gauges how ready they are — and always offers to connect a real person.</p></div>
       <div class="step"><div class="num">3</div><h3>It books them in</h3><p>The appointment lands straight in your calendar. You get a simple monthly report: calls made, leads reached, appointments booked.</p></div>
     </div>
@@ -530,7 +581,7 @@
       </div>
 
       <div class="tslf-done" id="tslf-done" role="status" aria-live="polite">
-        <div class="tslf-tick">
+        <div class="tslf-tick" id="tslf-tick" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
         <h3 id="tslf-done-h">Got it — calling you now</h3>
@@ -538,6 +589,7 @@
         <div class="tslf-timer" id="tslf-timer" aria-hidden="true">0.0s</div>
         <div class="tslf-timer-cap">counting since you hit submit</div>
         <div class="tslf-num" id="tslf-done-num"></div>
+        <p class="tslf-split" id="tslf-server-ms" style="display:none"></p>
         <p style="font-size:.9rem;color:var(--f-ink-soft);margin-top:18px">Liked what you heard? <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" style="color:var(--teal-d);font-weight:700;text-decoration:underline">Book a 15-minute call</a> and it can be answering your clinic's enquiries within a week.</p>
       </div>
     </div>
@@ -727,9 +779,16 @@
       return;
     }
 
-    var elapsed = Date.now() - T0;
+    var submittedAt = Date.now();
+    var elapsed = submittedAt - T0;
+
+    /* Silent bot rejection. It has to look identical to a real submit or a
+       bot learns exactly which check caught it, so the clock runs and stops
+       as usual — it just never reaches n8n. */
     if($("tslf-website").value !== "" || elapsed < DEMO.min_seconds * 1000){
-      showDone(); return;   /* silent bot rejection — looks like success */
+      startWatch(submittedAt);
+      setTimeout(function(){ stopWatch(Date.now() - submittedAt, 0); }, 1400);
+      return;
     }
 
     var phone = parseAuPhone($("tslf-phone").value);
@@ -767,16 +826,20 @@
     }, attribution());
 
     setLoading(true);
+    startWatch(submittedAt);
 
     if(!DEMO.webhook){
-      /* Not wired to n8n yet — simulate so the page flow can be tested end to end. */
+      /* Not wired to n8n — simulate so the page flow can be exercised. */
       try{ console.info("[tsl-demo] webhook not set; payload:", payload); }catch(err){}
-      setTimeout(function(){ showDone(); }, 500);
+      setTimeout(function(){
+        if(win.open) stopWatch(Date.now() - submittedAt, 0);
+        else showBlocked("outside_calling_hours");
+      }, 900);
       return;
     }
 
     var ctrl = new AbortController();
-    var timer = setTimeout(function(){ ctrl.abort(); }, 12000);
+    var timer = setTimeout(function(){ ctrl.abort(); }, 20000);
     fetch(DEMO.webhook, {
       method:"POST",
       /* text/plain keeps this a CORS "simple request": no OPTIONS preflight,
@@ -794,18 +857,23 @@
         return data;
       });
     }).then(function(verdict){
+      verdict = verdict || {};
       /* The workflow answers honestly: dialling, queued, or refused.
          Running a stopwatch for a call that was never placed would be the
          one lie this entire page exists to disprove. */
-      if(verdict && verdict.status === "rejected"){
+      if(verdict.status === "rejected"){
+        restoreForm();
         setLoading(false);
         $("tslf-alert-text").innerHTML = refusalMessage(verdict.reason);
         $("tslf-alert").classList.add("on");
         $("tslf-alert").scrollIntoView({block:"center", behavior:"smooth"});
         return;
       }
-      showDone(verdict);
+      if(verdict.status === "queued"){ showBlocked(verdict.reason || ""); return; }
+      /* status "dialling" — n8n has handed the call to Retell. Stop the clock. */
+      stopWatch(Date.now() - submittedAt, Number(verdict.server_ms) || 0);
     }).catch(function(){
+      restoreForm();
       setLoading(false);
       $("tslf-alert-text").innerHTML = 'We couldn\'t send that just now. Please try again, or email <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>.';
       $("tslf-alert").classList.add("on");
@@ -842,39 +910,83 @@
            ' Or email <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>.';
   }
 
-  function showDone(verdict){
-    verdict = verdict || {};
+  /* ── the demo clock ──────────────────────────────────────────────────
+     Starts the instant they hit submit; stops the instant n8n confirms the
+     call has been handed to the network. Both ends are measured in THIS
+     browser, so a sceptical dentist can run their own stopwatch alongside
+     it and agree with the number.
+
+     It errs slow on purpose: the figure includes the round trip back to
+     this page, so the call actually left our side a fraction sooner than
+     what is on screen. Never the other way round. */
+  var watchTimer = null;
+
+  function openPanel(){
     $("tslf-form-wrap").style.display = "none";
     var d = $("tslf-done");
     d.classList.add("on");
-
-    /* Trust the workflow when it has spoken; fall back to this page's own
-       calling-window guess only in simulate mode. */
-    var dialling = verdict.status ? verdict.status === "dialling" : win.open;
-    var reason   = verdict.reason || "";
-
-    if(!dialling){
-      var limited = reason.indexOf("demo_") === 0;
-      $("tslf-done-h").textContent = limited
-        ? "That's the demo limit"
-        : "Got it — you're locked in";
-      $("tslf-done-p").textContent = limited
-        ? (reason === "demo_number_limit"
-             ? "This mobile has already had a few demo calls in the last hour. Give it a little while, or book a call and I'll walk you through it properly."
-             : "The demo line has hit its cap for today. Book a call and I'll show you it live.")
-        : "We'll ring you " + win.text + ". Keep an eye out.";
-      $("tslf-timer").style.display = "none";
-      document.querySelector(".tslf-timer-cap").style.display = "none";
-    }else{
-      var t0 = Date.now();
-      var timerEl = $("tslf-timer");
-      setInterval(function(){
-        var s = (Date.now() - t0) / 1000;
-        timerEl.textContent = s.toFixed(1) + "s";
-      }, 100);
-    }
     $("tslf-done-num").textContent = "Calling " + ($("tslf-phone").value.trim() || "");
     d.scrollIntoView({block:"center", behavior:"smooth"});
+  }
+
+  function restoreForm(){
+    if(watchTimer){ clearInterval(watchTimer); watchTimer = null; }
+    $("tslf-done").classList.remove("on");
+    $("tslf-form-wrap").style.display = "";
+  }
+
+  function startWatch(t0){
+    openPanel();
+    /* No tick until the call is actually confirmed placed — a green tick over
+       a running clock is a claim we have not earned yet. */
+    $("tslf-tick").style.display = "none";
+    $("tslf-done-h").textContent = "Calling you now\u2026";
+    $("tslf-done-p").textContent = "Keep your phone out. Speaker on.";
+    $("tslf-timer").style.display = "";
+    var cap = document.querySelector(".tslf-timer-cap");
+    cap.style.display = "";
+    cap.textContent = "counting since you hit submit";
+    var el = $("tslf-timer");
+    if(watchTimer) clearInterval(watchTimer);
+    watchTimer = setInterval(function(){
+      el.textContent = ((Date.now() - t0) / 1000).toFixed(1) + "s";
+    }, 100);
+  }
+
+  function stopWatch(ms, serverMs){
+    if(watchTimer){ clearInterval(watchTimer); watchTimer = null; }
+    $("tslf-tick").style.display = "";
+    $("tslf-timer").textContent = (ms / 1000).toFixed(1) + "s";
+    $("tslf-done-h").textContent = "We successfully rang your phone";
+    document.querySelector(".tslf-timer-cap").textContent = "after you hit submit";
+    $("tslf-done-p").textContent = "Answer it — ask it anything a patient would.";
+    /* The split is the honest part of the pitch: this much was us, the rest
+       is the carrier putting the call through. */
+    if(serverMs > 0 && serverMs < ms){
+      $("tslf-server-ms").textContent =
+        "Our system used " + (serverMs / 1000).toFixed(1) + "s of that — the rest is the phone network connecting the call.";
+      $("tslf-server-ms").style.display = "";
+    }
+  }
+
+  /* Not dialling: no clock, no claim. A stopwatch on a call that was never
+     placed is the one thing this page must never show. */
+  function showBlocked(reason){
+    if(watchTimer){ clearInterval(watchTimer); watchTimer = null; }
+    openPanel();
+    $("tslf-tick").style.display = "";
+    var limited = reason.indexOf("demo_") === 0;
+    $("tslf-timer").style.display = "none";
+    document.querySelector(".tslf-timer-cap").style.display = "none";
+    $("tslf-server-ms").style.display = "none";
+    $("tslf-done-h").textContent = limited
+      ? "That's the demo limit"
+      : "Got it — you're locked in";
+    $("tslf-done-p").textContent = limited
+      ? (reason === "demo_number_limit"
+           ? "This mobile has already had a few demo calls in the last hour. Give it a little while, or book a call and I'll walk you through it properly."
+           : "The demo line has hit its cap for today. Book a call and I'll show you it live.")
+      : "We'll ring you " + win.text + ". Keep an eye out.";
   }
 
   window.__TSLF_DEMO__ = { parseAuPhone: parseAuPhone, validEmail: validEmail, callWindow: callWindow, consentText: consentText };
@@ -900,8 +1012,8 @@
         <h3>Calendar booking</h3><p>Appointments go straight into your existing calendar — no new software to learn.</p>
       </div>
       <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6M21 22v-6h-6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg></div>
-        <h3>Database reactivation</h3><p>We call your old, cold enquiries and turn forgotten leads into appointments.</p>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></div>
+        <h3>Built around your clinic</h3><p>Your services, your policies, the questions your patients actually ask — scripted for your practice, not a template.</p>
       </div>
       <div class="feat">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div>
@@ -909,7 +1021,7 @@
       </div>
       <div class="feat">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
-        <h3>Australian-compliant</h3><p>Calls follow ACMA's rules — caller ID, permitted hours, opt-out, and Do Not Call washing.</p>
+        <h3>Australian-compliant</h3><p>Valid caller ID on every call, an opt-out honoured on the spot, and a human hand-off whenever they ask.</p>
       </div>
     </div>
   </div>
@@ -918,9 +1030,16 @@
 <section class="block">
   <div class="wrap">
     <div class="offer">
-      <h2>See it work before you pay a cent.</h2>
-      <p>Start with a free pilot: I'll run ThirtySecondLead on your existing old leads at no cost, and you keep every appointment it books. If it works, we talk about keeping it on.</p>
-      <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">Claim a free pilot</a>
+      <span class="offer-tag"><span class="dot"></span> Founding clinics · five places</span>
+      <h2>Your first month is free.</h2>
+      <p>I'm taking on five clinics to start. You get the whole thing — the assistant built around your practice, live within the week — free for a month.</p>
+      <div class="offer-points">
+        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> No credit card</i>
+        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> No lock-in</i>
+        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Cancel with a text</i>
+      </div>
+      <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">Claim a founding place</a>
+      <p class="offer-fine">I'm building a reputation, not invoices. I'd rather earn month two than sell month one.</p>
     </div>
   </div>
 </section>
@@ -929,7 +1048,7 @@
   <div class="wrap">
     <span class="eyebrow">Who it's for</span>
     <h2 class="h2c">Built for clinics that hate losing leads</h2>
-    <p class="lead">If you run ads or have a backlog of enquiries, every slow callback is a patient walking to a competitor.</p>
+    <p class="lead">If patients find you online and enquire, every slow callback is one of them walking to the clinic that answered first.</p>
     <div class="who">
       <span class="tag">Cosmetic dentistry</span>
       <span class="tag">Dental practices</span>
@@ -945,8 +1064,9 @@
     <h2 class="h2c">The honest answers</h2>
     <div class="faq-wrap" style="margin-top:8px">
       <details open><summary>Is it really an AI?</summary><div class="a">Yes. The assistant always identifies itself as an automated assistant and can hand the call to a real person whenever the patient asks. It's designed to be helpful, not to trick anyone.</div></details>
-      <details><summary>Is this compliant in Australia?</summary><div class="a">Yes. Calls follow ACMA's telemarketing rules — valid caller ID, permitted calling hours, and an immediate opt-out — and numbers are washed against the Do Not Call Register before we dial.</div></details>
-      <details><summary>What does it cost?</summary><div class="a">The pilot on your existing leads is free. After that it's a simple flat monthly fee with no lock-in. Book a quick call and I'll give you exact numbers for your clinic.</div></details>
+      <details><summary>Is this compliant in Australia?</summary><div class="a">Yes — and it is simpler than most people expect. When a patient fills in your form asking to be contacted, the callback is a <em>solicited</em> call, not telemarketing. Every call still carries valid caller ID, identifies itself as an automated assistant up front, and honours an opt-out on the spot.</div></details>
+      <details><summary>What does it cost?</summary><div class="a">For the first five clinics, the first month is free — no credit card taken. After that it is a flat monthly fee with no lock-in, and you can cancel with a text. Book a call and I'll give you the exact number for your clinic.</div></details>
+      <details><summary>What's the catch?</summary><div class="a">Three things, and they're all free for you too. If the service is exceptional: a Google review, and a line I can put on this website. If it isn't: tell me exactly why — that's worth as much to me. And if you rate it after the month and you know one clinic like yours, one introduction. That's it — no lock-in, no card, cancel with a text.</div></details>
       <details><summary>What if a patient wants to speak to a human?</summary><div class="a">The assistant offers a human hand-off and books a callback with your team — so no one is ever stuck talking to a bot they don't want to.</div></details>
       <details><summary>Do I need to change my systems?</summary><div class="a">No. It books into your current calendar and works with the lead sources you already use. Setup is done for you.</div></details>
       <details><summary>How quickly can we be live?</summary><div class="a">Usually within a week. Most of that is provisioning your clinic's phone number, which carriers review before it goes active.</div></details>
@@ -959,7 +1079,7 @@
     <h2>Stop losing patients to slow follow-up.</h2>
     <p>Book a 15-minute call. If it's not a fit, I'll tell you straight.</p>
     <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">Book a 15-minute demo</a>
-    <p class="micro" style="justify-content:center;margin-top:18px">Or email <a href="mailto:hello@thirtysecondlead.com" style="color:var(--teal);font-weight:600">hello@thirtysecondlead.com</a></p>
+    <p class="micro" style="justify-content:center;margin-top:18px">Rather write than talk? <a href="contact.html" style="color:var(--teal);font-weight:600">Send a message</a> · <a href="mailto:hello@thirtysecondlead.com" style="color:var(--teal);font-weight:600">hello@thirtysecondlead.com</a></p>
   </div>
 </section>
 
@@ -968,6 +1088,7 @@
     <div class="top">
       <a href="index.html" class="brand"><img src="logo.png" alt="ThirtySecondLead"><span>ThirtySecondLead</span></a>
       <div class="flinks">
+        <a href="contact.html">Contact</a>
         <a href="legal.html">Business &amp; legal</a>
         <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>
         <span>Australia</span>
@@ -978,6 +1099,65 @@
     </div>
   </div>
 </footer>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "ProfessionalService",
+      "@id": "https://thirtysecondlead.com/#business",
+      "name": "Thirty Second Lead",
+      "alternateName": "ThirtySecondLead",
+      "url": "https://thirtysecondlead.com/",
+      "logo": "https://thirtysecondlead.com/logo.png",
+      "image": "https://thirtysecondlead.com/og-image.png",
+      "email": "hello@thirtysecondlead.com",
+      "description": "AI lead-response and appointment setting for Australian cosmetic and dental clinics. New-patient enquiries are called back within about 30 seconds, qualified, and booked into the clinic's calendar.",
+      "founder": {"@type": "Person", "name": "Lucas Putera Somadjaja"},
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "121 Bouverie St",
+        "addressLocality": "Carlton",
+        "addressRegion": "VIC",
+        "postalCode": "3053",
+        "addressCountry": "AU"
+      },
+      "areaServed": {"@type": "Country", "name": "Australia"},
+      "identifier": {"@type": "PropertyValue", "name": "ABN", "value": "25 271 662 441"},
+      "knowsAbout": ["Lead response", "Appointment setting", "Dental practice marketing", "Cosmetic clinic marketing"]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://thirtysecondlead.com/#website",
+      "url": "https://thirtysecondlead.com/",
+      "name": "ThirtySecondLead",
+      "publisher": {"@id": "https://thirtysecondlead.com/#business"},
+      "inLanguage": "en-AU"
+    },
+    {
+      "@type": "Service",
+      "name": "Speed to Lead \u2014 AI new-patient callback",
+      "serviceType": "AI lead response and appointment setting",
+      "provider": {"@id": "https://thirtysecondlead.com/#business"},
+      "areaServed": {"@type": "Country", "name": "Australia"},
+      "audience": {"@type": "Audience", "audienceType": "Cosmetic and dental clinics"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Is it really an AI?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The assistant always identifies itself as an automated assistant and can hand the call to a real person whenever the patient asks."}},
+        {"@type": "Question", "name": "Is this compliant in Australia?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. When a patient fills in your form asking to be contacted, the callback is a solicited call rather than telemarketing. Every call carries valid caller ID, identifies itself as an automated assistant, and honours an opt-out on the spot."}},
+        {"@type": "Question", "name": "What does it cost?", "acceptedAnswer": {"@type": "Answer", "text": "For the first five clinics the first month is free, with no credit card taken. After that it is a flat monthly fee with no lock-in."}},
+        {"@type": "Question", "name": "What's the catch?", "acceptedAnswer": {"@type": "Answer", "text": "Three things, all free: a Google review and a line for the website if the service is exceptional, honest feedback on why if it is not, and one introduction to a similar clinic if you rate it after the month."}},
+        {"@type": "Question", "name": "What if a patient wants to speak to a human?", "acceptedAnswer": {"@type": "Answer", "text": "The assistant offers a human hand-off and books a callback with your team."}},
+        {"@type": "Question", "name": "Do I need to change my systems?", "acceptedAnswer": {"@type": "Answer", "text": "No. It books into your current calendar and works with the lead sources you already use. Setup is done for you."}},
+        {"@type": "Question", "name": "How quickly can we be live?", "acceptedAnswer": {"@type": "Answer", "text": "Usually within a week. Most of that is provisioning your clinic's phone number, which carriers review before it goes active."}}
+      ]
+    }
+  ]
+}
+</script>
 
 </body>
 </html>
