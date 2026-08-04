@@ -25,10 +25,17 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plus-jakarta-sans-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* self-hosted — no third-party request, no render-blocking stylesheet */
+  @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/inter-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-700-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2')}
+
   :root{
     /* from the logo */
     --teal:#007878; --teal-d:#00625f; --teal-deep:#0e3d3d;
@@ -239,6 +246,25 @@
   .tag{background:#fff;border:1px solid var(--line);border-radius:30px;padding:11px 22px;font-weight:600;font-size:.94rem;
     box-shadow:var(--shadow-s)}
 
+  /* testimonials */
+  .quotes{display:grid;gap:20px;max-width:820px;margin:0 auto}
+  .quote{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:36px 38px;
+    box-shadow:var(--shadow-s);position:relative;overflow:hidden}
+  .quote .qm{position:absolute;top:10px;right:26px;font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:5rem;line-height:1;color:var(--teal-xl);pointer-events:none;user-select:none}
+  .quote p{position:relative;z-index:1;font-size:1.12rem;color:var(--ink-2);line-height:1.62}
+  .quote p+p{margin-top:14px}
+  .quote cite{position:relative;z-index:1;display:block;margin-top:22px;font-style:normal;
+    font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.98rem;color:var(--ink)}
+  .quote cite span{display:block;font-family:'Inter',sans-serif;font-weight:500;font-size:.9rem;color:var(--grey);margin-top:2px}
+  .quote-open{border:1.5px dashed #bcdcdc;background:var(--teal-tint);box-shadow:none}
+  .quote-open .qm{color:#cfe4e4}
+  .quote-open .lead-in{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;
+    font-size:1.2rem;color:var(--ink);margin-bottom:11px;letter-spacing:-.02em}
+  .quote-open p{color:var(--grey);font-size:1.04rem}
+  .quote-cta{text-align:center;margin-top:26px}
+  @media(max-width:820px){.quote{padding:28px 24px}.quote p{font-size:1.02rem}.quote .qm{font-size:3.6rem;top:6px;right:16px}}
+
   /* faq */
   .faq-wrap{max-width:790px;margin:0 auto}
   details{background:#fff;border:1px solid var(--line);border-radius:13px;margin-bottom:11px;overflow:hidden;
@@ -403,6 +429,7 @@
           <a href="#faq">FAQ</a>
           <div class="sep"></div>
           <a href="contact.html">Contact</a>
+          <a href="data.html">Your data</a>
         </div>
       </details>
     </nav>
@@ -1058,6 +1085,43 @@
   </div>
 </section>
 
+<section class="block" id="results">
+  <div class="wrap">
+    <span class="eyebrow">Founding clinics</span>
+    <h2 class="h2c">This is where the first review goes.</h2>
+    <p class="lead">ThirtySecondLead is new. I could fill this page with stock photos and numbers I've borrowed from someone else's case study — plenty do. I'd rather leave it empty until a real Melbourne clinic puts something here.</p>
+
+    <div class="quotes">
+
+      <!-- ===================================================================
+           TO ADD A REAL REVIEW: delete the .quote-open block below and
+           uncomment this one. Keep them in a stack — two or three read as
+           honest, a wall of them reads as manufactured.
+
+      <div class="quote">
+        <span class="qm" aria-hidden="true">&rdquo;</span>
+        <p>Their words, exactly as they wrote them. Don't tidy the grammar &mdash; a review that reads like a person wrote it is worth more than a polished one.</p>
+        <cite>Dr Firstname Lastname
+          <span>Practice Principal, Clinic Name &middot; Suburb VIC</span>
+        </cite>
+      </div>
+      =================================================================== -->
+
+      <div class="quote quote-open">
+        <span class="qm" aria-hidden="true">&rdquo;</span>
+        <span class="lead-in">Reserved for clinic number one.</span>
+        <p>Five clinics get their first month free. In exchange, the ones who think it was worth it write what goes here &mdash; and I don't get to edit it. If it wasn't worth it, I'd rather hear exactly why, in private, and fix it.</p>
+        <p>Ask me in six weeks. There should be a name in this box.</p>
+      </div>
+
+    </div>
+
+    <div class="quote-cta">
+      <a href="https://cal.com/thirtysecondlead/demo" target="_blank" rel="noopener noreferrer" class="btn btn-teal">Take one of the five places</a>
+    </div>
+  </div>
+</section>
+
 <section class="block soft" id="faq">
   <div class="wrap">
     <span class="eyebrow">FAQ</span>
@@ -1089,6 +1153,7 @@
       <a href="index.html" class="brand"><img src="logo.png" alt="ThirtySecondLead"><span>ThirtySecondLead</span></a>
       <div class="flinks">
         <a href="contact.html">Contact</a>
+        <a href="data.html">Your data</a>
         <a href="legal.html">Business &amp; legal</a>
         <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>
         <span>Australia</span>

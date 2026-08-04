@@ -26,10 +26,17 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plus-jakarta-sans-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* self-hosted — no third-party request, no render-blocking stylesheet */
+  @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/inter-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-700-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2')}
+
   :root{
     --teal:#007878; --teal-d:#00625f; --teal-deep:#0e3d3d;
     --teal-xl:#e6f3f3; --teal-tint:#f4fafa;
@@ -350,6 +357,7 @@
       <a href="index.html" class="brand"><img src="logo.png" alt="ThirtySecondLead"><span>ThirtySecondLead</span></a>
       <div class="flinks">
         <a href="contact.html">Contact</a>
+        <a href="data.html">Your data</a>
         <a href="legal.html">Business &amp; legal</a>
         <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>
         <span>Australia</span>
@@ -371,7 +379,7 @@
      Until it is set, the form falls back to a plain email prompt rather
      than silently failing.
   ------------------------------------------------------------------ */
-  var ACCESS_KEY = "PASTE_WEB3FORMS_ACCESS_KEY_HERE";
+  var ACCESS_KEY = "6018e1a0-42e4-464d-b0ab-e4f7891878a5";
   var ENDPOINT   = "https://api.web3forms.com/submit";
   var MAILTO     = "hello@thirtysecondlead.com";
 
