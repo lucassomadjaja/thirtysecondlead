@@ -678,24 +678,26 @@
     try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || null; }catch(e){ return null; }
   }
 
-  /* Demo calling window: solicited call with express any-time consent, so 9am–8pm
-     every day of the week. Outside that, the promise text stays honest. */
-  function callWindow(tz){
-    var p = {};
-    try{
-      var parts = new Intl.DateTimeFormat("en-AU",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());
-      for(var i=0;i<parts.length;i++) p[parts[i].type] = parts[i].value;
-    }catch(e){ return {open:true, text:"within 30 seconds"}; }
-    var mins = (+p.hour)*60 + (+p.minute);
-    if(mins >= 540 && mins < 1200) return {open:true, text:"within 30 seconds"};
-    if(mins < 540) return {open:false, text:"at 9am this morning"};
-    return {open:false, text:"at 9am tomorrow"};
-  }
-  var win = callWindow(DEMO.timezone);
-  if(!win.open){
-    $("tslf-promise-text").innerHTML = "It's outside polite calling hours right now, so we'll ring you <b>" + win.text + "</b>.";
-    $("tslf-submit-label").textContent = "Call me " + win.text;
-  }
+  /* ── No calling-hours gate here. Deliberate. ────────────────────────
+     This form is an enquiry and the call is the answer to it. Do Not Call
+     Register Regulations 2017 reg 6(7) ("Solicited calls") puts a call made in
+     response to a customer's enquiry, about that enquiry, within a reasonable
+     time, outside the definition of a telemarketing call — Example 5 in the
+     regulation is literally an online form plus a phone call back. Not a
+     telemarketing call under the DNCR Act means not one under Telecommunications
+     Act s 7(a), which means the Telemarketing and Research Calls Industry
+     Standard 2017 — its s 8 hours and its s 8(3) holidays — never applies to
+     this call. Belt and braces: the consent text below also captures express
+     advance consent to a call "including evenings, weekends and public
+     holidays", which is the s 8(5) exemption if anyone argued the Standard did.
+
+     Dialling FAST is what keeps reg 6(7) alive ("within a reasonable time"), so
+     holding a lead until 9am was not only costing conversions, it was eroding
+     the exemption it was written to respect. Do not re-add a clock here.
+
+     The COLD reactivation agent is a different legal animal — 3–36 months is
+     not "a reasonable time", so hours, holidays and full disclosure all apply
+     to it. That gate belongs on its path, never on this one. */
 
   function esc(s){
     return String(s).replace(/[&<>"']/g, function(m){
@@ -844,7 +846,6 @@
       time_on_form_ms:      elapsed,
       clinic_timezone:      DEMO.timezone,
       lead_timezone:        leadTimezone(),
-      within_calling_hours: win.open,
       page_url:             location.href.slice(0,500),
       referrer:             document.referrer.slice(0,500) || null,
       user_agent:           navigator.userAgent.slice(0,300),
@@ -860,10 +861,7 @@
     if(!DEMO.webhook){
       /* Not wired to n8n — simulate so the page flow can be exercised. */
       try{ console.info("[tsl-demo] webhook not set; payload:", payload); }catch(err){}
-      setTimeout(function(){
-        if(win.open) stopWatch(Date.now() - submittedAt, 0);
-        else showBlocked("outside_calling_hours");
-      }, 900);
+      setTimeout(function(){ stopWatch(Date.now() - submittedAt, 0); }, 900);
       return;
     }
 
@@ -1020,10 +1018,10 @@
       ? (reason === "demo_number_limit"
            ? "This mobile has already had a few demo calls in the last hour. Give it a little while, or book a call and I'll walk you through it properly."
            : "The demo line has hit its cap for today. Book a call and I'll show you it live.")
-      : "We'll ring you " + win.text + ". Keep an eye out.";
+      : "We'll ring you shortly. Keep an eye out.";
   }
 
-  window.__TSLF_DEMO__ = { parseAuPhone: parseAuPhone, validEmail: validEmail, callWindow: callWindow, consentText: consentText };
+  window.__TSLF_DEMO__ = { parseAuPhone: parseAuPhone, validEmail: validEmail, consentText: consentText };
 })();
 </script>
 
