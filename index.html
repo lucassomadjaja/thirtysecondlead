@@ -933,7 +933,12 @@
       consent_expired:             "That permission has lapsed — tick it again and resubmit.",
       not_a_valid_au_number:       "That doesn't look like an Australian number we can ring. Try 0412 345 678.",
       service_number_not_dialable: "That's a 1300 or 1800 number — use a personal mobile.",
-      bot_suspected:               "That came through too fast for us to be sure it was a person. Give it another go."
+      bot_suspected:               "That came through too fast for us to be sure it was a person. Give it another go.",
+      /* The dial itself is gated in n8n (DEMO_OPEN, plus a number allowlist).
+         Without this entry a closed demo fell through to the generic "we
+         couldn't place that call", which reads as a broken product rather than
+         a paused demo — the one impression this page cannot afford to give. */
+      demo_closed:                 "The live demo is paused right now — <a href=\"contact.html\">book a call</a> and I'll run it with you live."
     };
     return (M[reason] || "We couldn't place that call just now.") +
            ' Or email <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a>.';
