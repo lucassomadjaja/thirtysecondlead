@@ -312,7 +312,7 @@
   'use strict';
   var API = 'https://lucassomadjaja.app.n8n.cloud/webhook';
   var TOKEN_KEY = 'tsl_dash_token';
-  var state = { token: null, clinic: null, days: 30, data: null, timer: null, openRow: null };
+  var state = { token: null, clinic: null, days: 30, data: null, timer: null, openRow: null, openCallId: null };
 
   var $ = function (id) { return document.getElementById(id); };
   var el = function (tag, cls, text) {
@@ -357,7 +357,7 @@
   }
   function signOut(message) {
     try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-    state.token = null; state.data = null;
+    state.token = null; state.data = null; state.openRow = null; state.openCallId = null;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
     setView(false);
     if (message) { var e2 = $('loginErr'); e2.textContent = message; e2.className = 'login-err show'; }
@@ -426,6 +426,15 @@
   function render() {
     var d = state.data;
     if (!d) return;
+
+    // A live dashboard that yanks you back to the top every 60 seconds is
+    // unreadable — you cannot get through a transcript before it moves. The log
+    // is rebuilt wholesale on every refresh, which briefly collapses the page
+    // height and makes the browser clamp the scroll position. Snapshot it here
+    // and put it back once the new rows have laid out. Which row is OPEN
+    // survives separately, by call_id — see renderLog.
+    var keepY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
     $('clinicChip').textContent = d.clinic.name;
     $('clinicName').textContent = d.clinic.name;
     $('liveText').textContent = 'Live — updated ' + fmtClock(new Date()) + ' · auto-refreshes every minute';
@@ -455,6 +464,15 @@
     renderFunnel(f, d.not_called);
     renderDaily(d.daily);
     renderLog(d.calls);
+
+    if (keepY > 0) {
+      window.scrollTo(0, keepY);
+      // Second pass after layout settles — the funnel bars and a reopened
+      // detail row can both change the page height between these two frames.
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () { window.scrollTo(0, keepY); });
+      }
+    }
   }
 
   // funnel — ordinal ramp (validated), bars scaled to forms
@@ -646,6 +664,7 @@
   function renderLog(calls) {
     var body = $('logBody');
     body.textContent = '';
+    state.openRow = null;          // these nodes are about to be thrown away; openCallId is what survives
     $('logEmpty').style.display = calls.length ? 'none' : 'block';
     calls.forEach(function (c) {
       var tr = el('tr', 'log-row');
@@ -696,20 +715,40 @@
 
       body.appendChild(tr);
       body.appendChild(detail);
+
+      // A refresh must not shut a row someone is mid-way through reading. The
+      // panel is rebuilt from the NEW payload, so an open row updates in place
+      // instead of going stale behind the client's back.
+      if (state.openCallId && c.call_id === state.openCallId) openRow(tr, detail, dtd, c);
     });
   }
 
   function toggleRow(tr, detail, dtd, c) {
-    var open = detail.style.display !== 'none';
+    var isOpen = detail.style.display !== 'none';
     if (state.openRow && state.openRow !== detail) {
       state.openRow.style.display = 'none';
       if (state.openRow.previousSibling) state.openRow.previousSibling.setAttribute('aria-expanded', 'false');
+      state.openRow = null;
     }
-    detail.style.display = open ? 'none' : '';
-    tr.setAttribute('aria-expanded', open ? 'false' : 'true');
-    state.openRow = open ? null : detail;
-    if (open) return;
+    if (isOpen) {
+      detail.style.display = 'none';
+      tr.setAttribute('aria-expanded', 'false');
+      state.openRow = null;
+      state.openCallId = null;      // closed on purpose — do not reopen on the next refresh
+      return;
+    }
+    openRow(tr, detail, dtd, c);
+  }
 
+  function openRow(tr, detail, dtd, c) {
+    detail.style.display = '';
+    tr.setAttribute('aria-expanded', 'true');
+    state.openRow = detail;
+    state.openCallId = c.call_id;
+    buildDetail(dtd, c);
+  }
+
+  function buildDetail(dtd, c) {
     dtd.textContent = '';
     var inner = el('div', 'detail-inner');
 
@@ -733,7 +772,19 @@
     side.appendChild(kv('Form submitted', fmtWhen(c.form_submitted_at)));
     if (c.speed_ms !== null) side.appendChild(kv('We dialled after', fmtSpeed(c.speed_ms)));
     if (c.sentiment) side.appendChild(kv('Caller sentiment', c.sentiment));
-    if (c.appointment_time) side.appendChild(kv('Appointment', c.appointment_time));
+    // Booked → the slot the calendar actually confirmed.
+    // Not booked but a time came up → that is what the caller ASKED for. Calling
+    // it "Appointment" would have the dashboard quietly promising something no
+    // calendar ever agreed to, which is the exact failure this product sells
+    // against. Different label, on purpose.
+    // Neither → an em dash, so the row reads as genuinely empty, not omitted.
+    if (c.appointment_time && c.booked) {
+      side.appendChild(kv('Appointment', c.appointment_time));
+    } else if (c.appointment_time) {
+      side.appendChild(kv('Customer preference', c.appointment_time));
+    } else {
+      side.appendChild(kv('Appointment', '—'));
+    }
     if (c.cancelled && c.cancel_note) side.appendChild(kv('Cancellation note', c.cancel_note));
 
     if (c.booked) {
@@ -772,6 +823,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.ranges button'), function (x) { x.setAttribute('aria-pressed', 'false'); });
       b.setAttribute('aria-pressed', 'true');
       state.days = parseInt(b.getAttribute('data-days'), 10) || 30;
+      state.openRow = null; state.openCallId = null;   // different set of calls; nothing to reopen
       loadData(true);
     });
   });
