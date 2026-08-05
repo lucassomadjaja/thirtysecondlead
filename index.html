@@ -957,15 +957,15 @@
   /* ── the carrier-handoff allowance ──────────────────────────────────
      The phone does not alert the instant n8n hands the call to the network.
      There is a carrier handoff between "accepted" and the screen lighting up,
-     and it is not observable from this page. The client dashboard already
-     carries a flat one-second allowance for it; the demo clock now carries the
-     same one, so the number stops at the moment the notification actually
-     appears rather than a second before it.
+     and it is not observable from this page. The client dashboard carries a
+     flat one-second allowance for it; this clock carries TWO, because one was
+     measured against a real handset and still stopped early. The number now
+     lands with the notification instead of ahead of it.
 
      This makes our headline figure WORSE, deliberately. Understating the speed
      is survivable; claiming a ring that has not happened yet is the one thing
      this page exists to disprove. Never trim this to flatter the number. */
-  var CARRIER_HANDOFF_MS = 1000;
+  var CARRIER_HANDOFF_MS = 2000;
 
   function openPanel(){
     $("tslf-form-wrap").style.display = "none";
