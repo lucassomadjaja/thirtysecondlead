@@ -239,7 +239,7 @@
       <div class="card tile">
         <div class="lbl">Avg. speed to lead</div>
         <div class="val" id="kSpeed">—</div>
-        <div class="sub" id="kSpeedSub">form submitted → us dialling</div>
+        <div class="sub" id="kSpeedSub">form submitted → their phone ringing</div>
       </div>
       <div class="card tile">
         <div class="lbl">Connect rate</div>
@@ -301,7 +301,7 @@
       <div class="empty" id="logEmpty" style="display:none">No enquiries in this period yet. The moment one lands, it appears here — with the call already made.</div>
     </section>
 
-    <p class="foot-note"><b>How we measure, honestly:</b> <b>Speed to lead</b> is the time from the form being submitted to our system dialling — the part we control; the phone network adds a few seconds of ring time on top. <b>Connect rate</b> counts a human answering — voicemail never counts. <b>Booked</b> means the booking tool confirmed a slot, not just that the assistant tried. Cancellations are the ones your front desk reports (one click on any booked call). Times shown in your clinic’s local time. Data handling: <a href="data.html">what we do with your data</a>.</p>
+    <p class="foot-note"><b>How we measure, honestly:</b> <b>Speed to lead</b> is the time from the form being submitted to the lead’s phone starting to ring — the part we control, plus a flat one-second allowance for the carrier handoff we cannot observe from our side. That allowance errs against us on purpose: we would rather understate the speed than claim a ring that has not happened yet. <b>Connect rate</b> counts a human answering — voicemail never counts. <b>Booked</b> means the booking tool confirmed a slot, not just that the assistant tried. Cancellations are the ones your front desk reports (one click on any booked call). Times shown in your clinic’s local time. Data handling: <a href="data.html">what we do with your data</a>.</p>
   </div>
 </main>
 
@@ -441,8 +441,8 @@
       $('kSpeed').appendChild(el('span', 'unit', 's'));
     }
     $('kSpeedSub').textContent = k.median_speed_ms !== null
-      ? 'median ' + fmtSpeed(k.median_speed_ms) + ' · form submitted → us dialling'
-      : 'form submitted → us dialling';
+      ? 'median ' + fmtSpeed(k.median_speed_ms) + ' · form submitted → their phone ringing'
+      : 'form submitted → their phone ringing';
     $('kConnect').textContent = fmtPct(k.connect_rate);
     $('kConnectSub').textContent = f.picked_up + ' of ' + f.rung + ' calls answered by a person';
     $('kBook').textContent = fmtPct(k.booking_rate);
