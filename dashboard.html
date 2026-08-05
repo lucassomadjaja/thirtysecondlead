@@ -171,6 +171,17 @@
   .cx-btn.reinstate{color:var(--teal-d)}
   .cx-btn.reinstate:hover{border-color:var(--teal)}
   .cx-note{margin-top:8px;font-size:.78rem;color:var(--grey);line-height:1.4}
+  .cx-form{margin-top:10px;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff}
+  .cx-lab{display:block;font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:6px}
+  .cx-ta{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.82rem;line-height:1.45;color:var(--ink);background:#fff;resize:vertical;min-height:60px}
+  .cx-ta::placeholder{color:var(--grey-2)}
+  .cx-ta:focus{outline:none;border-color:var(--teal)}
+  .cx-actions{display:flex;gap:8px;margin-top:9px}
+  .cx-go{flex:1;border:0;background:var(--coral-d);color:#fff;border-radius:8px;padding:8px 10px;font-size:.82rem;font-weight:700}
+  .cx-go:hover:not(:disabled){filter:brightness(.93)}
+  .cx-go:disabled{opacity:.6}
+  .cx-back{border:1.5px solid var(--line);background:#fff;color:var(--grey);border-radius:8px;padding:8px 12px;font-size:.82rem;font-weight:600}
+  .cx-back:hover{border-color:var(--grey-2)}
   .empty{padding:44px 22px;text-align:center;color:var(--grey);font-size:.95rem}
 
   .foot-note{font-size:.8rem;color:var(--grey);line-height:1.6;margin-top:6px;padding:16px 4px 0}
@@ -254,7 +265,7 @@
       <div class="card tile">
         <div class="lbl">Appointments booked</div>
         <div class="val" id="kNet">—</div>
-        <div class="sub" id="kNetSub">net of cancellations</div>
+        <div class="sub" id="kNetSub">confirmed by the booking tool</div>
       </div>
     </section>
 
@@ -312,7 +323,7 @@
   'use strict';
   var API = 'https://lucassomadjaja.app.n8n.cloud/webhook';
   var TOKEN_KEY = 'tsl_dash_token';
-  var state = { token: null, clinic: null, days: 30, data: null, timer: null, openRow: null, openCallId: null };
+  var state = { token: null, clinic: null, days: 30, data: null, timer: null, openRow: null, openCallId: null, cxFormOpen: false };
 
   var $ = function (id) { return document.getElementById(id); };
   var el = function (tag, cls, text) {
@@ -357,7 +368,7 @@
   }
   function signOut(message) {
     try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-    state.token = null; state.data = null; state.openRow = null; state.openCallId = null;
+    state.token = null; state.data = null; state.openRow = null; state.openCallId = null; state.cxFormOpen = false;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
     setView(false);
     if (message) { var e2 = $('loginErr'); e2.textContent = message; e2.className = 'login-err show'; }
@@ -456,14 +467,22 @@
     $('kConnectSub').textContent = f.picked_up + ' of ' + f.rung + ' calls answered by a person';
     $('kBook').textContent = fmtPct(k.booking_rate);
     $('kBookSub').textContent = f.booked + ' of ' + f.forms + ' enquiries became bookings';
-    $('kNet').textContent = String(k.net_bookings);
+    // The headline is what the assistant actually got booked. A cancellation
+    // happens afterwards and at the clinic's end — netting it off up here made
+    // the tile read as though the appointment had never been made at all, which
+    // is the opposite of what this number is for. The net still gets stated, in
+    // the line underneath, where it cannot be mistaken for the booking count.
+    $('kNet').textContent = String(f.booked);
     $('kNetSub').textContent = f.cancelled > 0
-      ? f.booked + ' booked − ' + f.cancelled + ' cancelled (reported by your desk)'
-      : f.booked + ' booked · no cancellations reported';
+      ? f.cancelled + ' later cancelled (reported by your desk) → ' + k.net_bookings + ' net'
+      : 'no cancellations reported';
 
     renderFunnel(f, d.not_called);
     renderDaily(d.daily);
-    renderLog(d.calls);
+    // Never rebuild the log out from under someone mid-way through typing a
+    // cancellation reason — that form lives inside a detail row, and a rebuild
+    // would bin the half-written note. Resumes the moment they confirm or back out.
+    if (!state.cxFormOpen) renderLog(d.calls);
 
     if (keepY > 0) {
       window.scrollTo(0, keepY);
@@ -729,12 +748,14 @@
       state.openRow.style.display = 'none';
       if (state.openRow.previousSibling) state.openRow.previousSibling.setAttribute('aria-expanded', 'false');
       state.openRow = null;
+      state.cxFormOpen = false;
     }
     if (isOpen) {
       detail.style.display = 'none';
       tr.setAttribute('aria-expanded', 'false');
       state.openRow = null;
       state.openCallId = null;      // closed on purpose — do not reopen on the next refresh
+      state.cxFormOpen = false;     // whatever was half-typed in there is gone; unfreeze the log
       return;
     }
     openRow(tr, detail, dtd, c);
@@ -788,30 +809,83 @@
     if (c.cancelled && c.cancel_note) side.appendChild(kv('Cancellation note', c.cancel_note));
 
     if (c.booked) {
-      var btn = el('button', 'cx-btn' + (c.cancelled ? ' reinstate' : ''),
-        c.cancelled ? 'Reinstate this booking' : 'Mark this booking cancelled');
-      btn.type = 'button';
-      btn.addEventListener('click', function (ev) {
-        ev.stopPropagation();
-        var note = '';
-        if (!c.cancelled) {
-          note = window.prompt('Optional — why was it cancelled? (helps us tune the follow-up)', '') || '';
-          if (note === null) return;
-        }
-        btn.disabled = true; btn.textContent = 'Saving…';
+      // The reason used to come from window.prompt(): a grey browser dialog in
+      // the wrong typeface, pinned to the top of the screen, nowhere near the
+      // button that summoned it — and on Chrome it carries a "prevent this page
+      // from creating more dialogs" checkbox that can quietly kill the feature
+      // for good. It also lied about being optional: pressing Cancel went ahead
+      // anyway, because `|| ''` turned the null into a string before the null
+      // check could see it. This is an inline form, exactly where they clicked.
+      var cxWrap = el('div');
+
+      var cxPost = function (cancelled, note, pressed) {
+        pressed.disabled = true;
+        pressed.textContent = 'Saving…';
         fetch(API + '/tsl-dash-update', {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ token: state.token, call_id: c.call_id, cancelled: !c.cancelled, note: note })
+          body: JSON.stringify({ token: state.token, call_id: c.call_id, cancelled: cancelled, note: note })
         }).then(function (r) { return r.json(); }).then(function (j) {
-          if (j && j.ok) { loadData(false); }
-          else { btn.disabled = false; btn.textContent = 'Try again'; }
-        }).catch(function () { btn.disabled = false; btn.textContent = 'Try again'; });
-      });
-      side.appendChild(btn);
-      side.appendChild(el('p', 'cx-note', c.cancelled
-        ? 'Reinstating puts this appointment back in your booked numbers.'
-        : 'This keeps your dashboard honest — cancellations come off the booked total the moment you flag them.'));
+          if (j && j.ok) { state.cxFormOpen = false; loadData(false); }
+          else { pressed.disabled = false; pressed.textContent = 'Try again'; }
+        }).catch(function () { pressed.disabled = false; pressed.textContent = 'Try again'; });
+      };
+
+      var cxShowButton = function () {
+        state.cxFormOpen = false;
+        cxWrap.textContent = '';
+        var btn = el('button', 'cx-btn' + (c.cancelled ? ' reinstate' : ''),
+          c.cancelled ? 'Reinstate this booking' : 'Mark this booking cancelled');
+        btn.type = 'button';
+        btn.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          if (c.cancelled) { cxPost(false, '', btn); return; }   // putting one back needs no reason
+          cxShowForm();
+        });
+        cxWrap.appendChild(btn);
+        cxWrap.appendChild(el('p', 'cx-note', c.cancelled
+          ? 'Reinstating puts this appointment back in your booked numbers.'
+          : 'This keeps your dashboard honest — cancellations come off the net total the moment you flag them.'));
+      };
+
+      var cxShowForm = function () {
+        state.cxFormOpen = true;   // freezes the log rebuild while they type
+        cxWrap.textContent = '';
+        var box = el('div', 'cx-form');
+        box.addEventListener('click', function (ev) { ev.stopPropagation(); });
+
+        box.appendChild(el('label', 'cx-lab', 'Why was it cancelled?'));
+        var ta = el('textarea', 'cx-ta');
+        ta.rows = 3;
+        ta.placeholder = 'Optional — patient rescheduled, went elsewhere, no longer needed…';
+        box.appendChild(ta);
+
+        var go = el('button', 'cx-go', 'Confirm cancellation');
+        go.type = 'button';
+        go.addEventListener('click', function (ev) { ev.stopPropagation(); cxPost(true, ta.value.trim(), go); });
+
+        var back = el('button', 'cx-back', 'Keep booking');
+        back.type = 'button';
+        back.addEventListener('click', function (ev) { ev.stopPropagation(); cxShowButton(); });
+
+        var acts = el('div', 'cx-actions');
+        acts.appendChild(go);
+        acts.appendChild(back);
+        box.appendChild(acts);
+
+        ta.addEventListener('keydown', function (ev) {
+          ev.stopPropagation();   // the row listens for Enter/Space to collapse itself
+          if (ev.key === 'Escape') { cxShowButton(); }
+          else if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { cxPost(true, ta.value.trim(), go); }
+        });
+
+        cxWrap.appendChild(box);
+        cxWrap.appendChild(el('p', 'cx-note', 'Leave it blank if you would rather not say — the cancellation still counts either way.'));
+        ta.focus();
+      };
+
+      cxShowButton();
+      side.appendChild(cxWrap);
     }
     inner.appendChild(side);
     dtd.appendChild(inner);
@@ -823,7 +897,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.ranges button'), function (x) { x.setAttribute('aria-pressed', 'false'); });
       b.setAttribute('aria-pressed', 'true');
       state.days = parseInt(b.getAttribute('data-days'), 10) || 30;
-      state.openRow = null; state.openCallId = null;   // different set of calls; nothing to reopen
+      state.openRow = null; state.openCallId = null; state.cxFormOpen = false;   // different set of calls; nothing to reopen
       loadData(true);
     });
   });
