@@ -943,15 +943,29 @@
   }
 
   /* ── the demo clock ──────────────────────────────────────────────────
-     Starts the instant they hit submit; stops the instant n8n confirms the
-     call has been handed to the network. Both ends are measured in THIS
-     browser, so a sceptical dentist can run their own stopwatch alongside
-     it and agree with the number.
+     Starts the instant they hit submit; keeps running until n8n confirms the
+     call is with the network AND the carrier-handoff allowance below has
+     elapsed. Both ends are measured in THIS browser, so a sceptical dentist
+     can run their own stopwatch alongside it and agree with the number.
 
-     It errs slow on purpose: the figure includes the round trip back to
-     this page, so the call actually left our side a fraction sooner than
-     what is on screen. Never the other way round. */
-  var watchTimer = null;
+     It errs slow on purpose, twice over: the figure includes the round trip
+     back to this page, and then adds a flat second for the handoff we cannot
+     see. The call left our side sooner than what is on screen, every time.
+     Never the other way round. */
+  var watchTimer = null, handoffTimer = null, watchRun = 0;
+
+  /* ── the carrier-handoff allowance ──────────────────────────────────
+     The phone does not alert the instant n8n hands the call to the network.
+     There is a carrier handoff between "accepted" and the screen lighting up,
+     and it is not observable from this page. The client dashboard already
+     carries a flat one-second allowance for it; the demo clock now carries the
+     same one, so the number stops at the moment the notification actually
+     appears rather than a second before it.
+
+     This makes our headline figure WORSE, deliberately. Understating the speed
+     is survivable; claiming a ring that has not happened yet is the one thing
+     this page exists to disprove. Never trim this to flatter the number. */
+  var CARRIER_HANDOFF_MS = 1000;
 
   function openPanel(){
     $("tslf-form-wrap").style.display = "none";
@@ -962,12 +976,15 @@
   }
 
   function restoreForm(){
+    watchRun++;
     if(watchTimer){ clearInterval(watchTimer); watchTimer = null; }
+    if(handoffTimer){ clearTimeout(handoffTimer); handoffTimer = null; }
     $("tslf-done").classList.remove("on");
     $("tslf-form-wrap").style.display = "";
   }
 
   function startWatch(t0){
+    watchRun++;
     openPanel();
     /* No tick until the call is actually confirmed placed — a green tick over
        a running clock is a claim we have not earned yet. */
@@ -985,13 +1002,29 @@
     }, 100);
   }
 
+  /* n8n has confirmed the call is with the network. Do NOT stop the clock here:
+     let it keep running through the carrier-handoff allowance and freeze it at
+     the far end, so it lands with the notification on the phone. */
   function stopWatch(ms, serverMs){
+    var run = watchRun;
+    if(handoffTimer) clearTimeout(handoffTimer);
+    handoffTimer = setTimeout(function(){
+      if(run !== watchRun) return;          // panel was reset while we waited
+      finishWatch(ms + CARRIER_HANDOFF_MS, serverMs);
+    }, CARRIER_HANDOFF_MS);
+  }
+
+  function finishWatch(ms, serverMs){
     if(watchTimer){ clearInterval(watchTimer); watchTimer = null; }
+    handoffTimer = null;
     $("tslf-tick").style.display = "";
     $("tslf-timer").textContent = (ms / 1000).toFixed(1) + "s";
-    $("tslf-done-h").textContent = "We successfully rang your phone";
+    /* "sent you a call", not "rang your phone" — Do Not Disturb, a silenced
+       handset or a call-screening app all mean the call left our side and the
+       phone never made a sound. Claiming the ring is a claim we cannot see. */
+    $("tslf-done-h").textContent = "We successfully sent you a call";
     document.querySelector(".tslf-timer-cap").textContent = "after you hit submit";
-    $("tslf-done-p").textContent = "Answer it — ask it anything a patient would.";
+    $("tslf-done-p").textContent = "Didn't receive a call? Make sure Do Not Disturb is off and the number you entered is correct.";
     /* The split is the honest part of the pitch: this much was us, the rest
        is the carrier putting the call through. */
     if(serverMs > 0 && serverMs < ms){
@@ -1004,7 +1037,9 @@
   /* Not dialling: no clock, no claim. A stopwatch on a call that was never
      placed is the one thing this page must never show. */
   function showBlocked(reason){
+    watchRun++;
     if(watchTimer){ clearInterval(watchTimer); watchTimer = null; }
+    if(handoffTimer){ clearTimeout(handoffTimer); handoffTimer = null; }
     openPanel();
     $("tslf-tick").style.display = "";
     var limited = reason.indexOf("demo_") === 0;
