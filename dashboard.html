@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<!--
+  ThirtySecondLead — client dashboard.
+  Self-contained (site rule): all CSS inline, no frameworks, self-hosted fonts.
+  Talks to the n8n Dashboard API (tsl-dash-login / tsl-dash-data / tsl-dash-update).
+  Login POSTs as text/plain so the request stays CORS-simple — same trick as the
+  lead form. Token lives in localStorage; every payload is clinic-scoped
+  server-side, the token never selects data client-side.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client dashboard — ThirtySecondLead</title>
+<meta name="description" content="Live performance dashboard for ThirtySecondLead clinics: every enquiry, every call, every booking.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://thirtysecondlead.com/dashboard">
+<meta name="theme-color" content="#007878">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plus-jakarta-sans-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-400-normal.woff2') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/inter-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-700-normal.woff2') format('woff2')}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2')}
+
+  :root{
+    --teal:#007878; --teal-d:#00625f; --teal-deep:#0e3d3d;
+    --teal-xl:#e6f3f3; --teal-tint:#f4fafa;
+    --coral:#fc6048; --coral-d:#e8482f; --coral-xl:#fff0ed;
+    --magenta:#b41860; --lime:#9cc03c;
+    --ink:#0e2427; --ink-2:#1b3a3e; --grey:#5c7175; --grey-2:#7b9094;
+    --line:#e1ecec; --bg:#ffffff;
+    /* chart palette — validated (dataviz six checks): categorical + ordinal ramp */
+    --c-series1:#00917d; --c-series2:#e8482f;
+    --funnel-1:#68b8b8; --funnel-2:#3f9f9f; --funnel-3:#1f8989; --funnel-4:#007070;
+    --r:16px; --r-lg:22px;
+    --shadow-s:0 1px 2px rgba(14,36,39,.05), 0 4px 12px rgba(14,36,39,.04);
+    --shadow-m:0 2px 4px rgba(14,36,39,.04), 0 12px 32px rgba(14,36,39,.07);
+    --max:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:#fafcfc;line-height:1.55;font-size:16px;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;color:var(--ink);line-height:1.15;letter-spacing:-.02em;font-weight:800}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
+  button{font-family:inherit;cursor:pointer}
+
+  /* ── header ─────────────────────────────────────────── */
+  header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px;gap:14px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.05rem}
+  .brand img{width:30px;height:30px}
+  .nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{display:none;align-items:center;gap:8px;background:var(--teal-tint);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.85rem;font-weight:600;color:var(--teal-d)}
+  .chip.show{display:inline-flex}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.95rem;padding:10px 20px;border-radius:11px;border:1.5px solid transparent;transition:transform .15s ease, background .15s ease}
+  .btn-primary{background:var(--coral);color:#fff;box-shadow:0 3px 10px rgba(252,96,72,.25)}
+  .btn-primary:hover{background:var(--coral-d);transform:translateY(-1px)}
+  .btn-primary[disabled]{opacity:.6;transform:none;cursor:default}
+  .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line);display:none}
+  .btn-ghost:hover{border-color:var(--teal);color:var(--teal)}
+  .btn-ghost.show{display:inline-flex}
+
+  /* ── login ──────────────────────────────────────────── */
+  .login-hero{min-height:calc(100vh - 64px);display:flex;align-items:flex-start;justify-content:center;padding:9vh 22px 60px}
+  .login-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-m);padding:38px 34px;width:100%;max-width:430px}
+  .login-card h1{font-size:1.55rem;margin-bottom:6px}
+  .login-card .sub{color:var(--grey);font-size:.95rem;margin-bottom:24px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.85rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+  .field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:1rem;font-family:inherit;color:var(--ink);background:#fff;transition:border-color .15s ease}
+  .field input:focus{outline:none;border-color:var(--teal)}
+  .login-err{display:none;background:var(--coral-xl);border:1px solid #f6c9bf;color:#a4300f;border-radius:10px;padding:10px 13px;font-size:.88rem;margin-bottom:14px}
+  .login-err.show{display:block}
+  .login-note{margin-top:20px;font-size:.83rem;color:var(--grey);line-height:1.5}
+  .login-note a{color:var(--teal);font-weight:600}
+
+  /* ── dashboard frame ────────────────────────────────── */
+  #dash{display:none;padding:26px 0 60px}
+  #dash.show{display:block}
+  .dash-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .dash-head h1{font-size:1.5rem}
+  .live-line{display:flex;align-items:center;gap:8px;color:var(--grey);font-size:.85rem;margin-top:4px}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(156,192,60,.5);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(156,192,60,.45)}70%{box-shadow:0 0 0 8px rgba(156,192,60,0)}100%{box-shadow:0 0 0 0 rgba(156,192,60,0)}}
+  /* filter row — one row, above everything it scopes */
+  .ranges{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
+  .ranges button{border:none;background:transparent;padding:8px 16px;border-radius:8px;font-size:.88rem;font-weight:600;color:var(--grey)}
+  .ranges button[aria-pressed="true"]{background:var(--teal);color:#fff}
+  .ranges button:not([aria-pressed="true"]):hover{color:var(--teal-d);background:var(--teal-xl)}
+
+  .grid-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-s);padding:20px 22px;transition:opacity .2s ease}
+  .refetching .card{opacity:.55}
+  .tile .lbl{font-size:.82rem;font-weight:600;color:var(--grey);margin-bottom:6px}
+  .tile .val{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:2.15rem;letter-spacing:-.02em;line-height:1.05;color:var(--ink)}
+  .tile .val .unit{font-size:1.15rem;font-weight:700;color:var(--grey-2);margin-left:2px}
+  .tile .sub{font-size:.8rem;color:var(--grey);margin-top:7px;line-height:1.4}
+  .tile .sub strong{color:var(--ink-2);font-weight:600}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .card h2{font-size:1.02rem;margin-bottom:2px}
+  .card .card-sub{font-size:.8rem;color:var(--grey);margin-bottom:18px}
+
+  /* ── funnel ─────────────────────────────────────────── */
+  .funnel-row{display:grid;grid-template-columns:112px 1fr 84px;align-items:center;gap:12px;margin-bottom:13px}
+  .funnel-row .flbl{font-size:.85rem;font-weight:600;color:var(--ink-2);text-align:right}
+  .funnel-track{position:relative;height:24px}
+  .funnel-bar{height:24px;border-radius:0 4px 4px 0;min-width:3px;transition:width .5s cubic-bezier(.2,.8,.3,1)}
+  .funnel-val{font-size:.88rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .funnel-val small{color:var(--grey);font-weight:500;font-size:.78rem;display:block;line-height:1.2}
+  .funnel-note{font-size:.8rem;color:var(--grey);margin-top:10px;padding-top:12px;border-top:1px solid var(--line);line-height:1.5}
+  .funnel-note b{color:var(--ink-2);font-weight:600}
+  .funnel-cx{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.85rem;color:var(--ink-2)}
+  .cx-dot{width:10px;height:10px;border-radius:3px;background:var(--c-series2);flex:none}
+
+  /* ── daily chart ────────────────────────────────────── */
+  .chart-box{position:relative}
+  .chart-box svg{display:block;width:100%;height:auto}
+  .legend{display:flex;gap:18px;align-items:center;margin-bottom:10px}
+  .legend .li{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--ink-2);font-weight:500}
+  .legend .sw{width:11px;height:11px;border-radius:3px}
+  .tooltip{position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-m);padding:9px 12px;font-size:.8rem;pointer-events:none;display:none;min-width:130px}
+  .tooltip .tt-t{color:var(--grey);margin-bottom:5px;font-weight:600}
+  .tooltip .tt-row{display:flex;align-items:center;gap:7px;margin-top:3px}
+  .tooltip .tt-key{width:10px;height:3px;border-radius:2px;flex:none}
+  .tooltip .tt-v{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:auto;padding-left:12px}
+
+  /* ── call log ───────────────────────────────────────── */
+  .log-card{padding:0;overflow:hidden}
+  .log-head{padding:20px 22px 12px}
+  .log-scroll{overflow-x:auto}
+  table.log{width:100%;border-collapse:collapse;font-size:.87rem;min-width:760px}
+  table.log th{position:sticky;top:0;background:#fff;text-align:left;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--grey-2);font-weight:600;padding:8px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.log td{padding:11px 14px;border-bottom:1px solid #edf4f4;vertical-align:top;white-space:nowrap}
+  table.log td.num{font-variant-numeric:tabular-nums}
+  tr.log-row{cursor:pointer}
+  tr.log-row:hover td{background:var(--teal-tint)}
+  tr.log-row[aria-expanded="true"] td{background:var(--teal-tint)}
+  .lead-cell b{display:block;font-weight:600;color:var(--ink)}
+  .lead-cell span{color:var(--grey);font-size:.78rem}
+  .stchip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px 3px 8px;font-size:.76rem;font-weight:600;white-space:nowrap}
+  .st-answered{background:var(--teal-xl);color:var(--teal-deep)}
+  .st-voicemail,.st-no_answer,.st-busy{background:#eef2f2;color:var(--grey)}
+  .st-in_progress{background:#fff7e0;color:#7a5b00}
+  .st-not_called,.st-dial_failed{background:#fdeee9;color:#a4300f}
+  .stchip .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.75}
+  .bkchip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font-size:.76rem;font-weight:700}
+  .bk-yes{background:#f2f7e2;color:#4c6414}
+  .bk-cx{background:var(--coral-xl);color:#a4300f;text-decoration:line-through}
+  .detail-td{white-space:normal !important;background:#fbfdfd;padding:0 !important}
+  .detail-inner{padding:16px 22px 20px;display:grid;grid-template-columns:1fr 300px;gap:22px}
+  .detail-inner h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--grey-2);margin-bottom:6px;font-weight:600}
+  .summary-p{font-size:.88rem;color:var(--ink-2);line-height:1.55;white-space:pre-wrap}
+  .transcript{margin-top:14px;font-size:.82rem;color:var(--grey);line-height:1.55;white-space:pre-wrap;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .detail-side .kv{font-size:.84rem;margin-bottom:8px;color:var(--grey)}
+  .detail-side .kv b{color:var(--ink);font-weight:600}
+  .cx-btn{margin-top:10px;width:100%;border:1.5px solid var(--line);background:#fff;color:#a4300f;border-radius:10px;padding:9px 12px;font-size:.85rem;font-weight:700}
+  .cx-btn:hover{border-color:var(--coral-d)}
+  .cx-btn.reinstate{color:var(--teal-d)}
+  .cx-btn.reinstate:hover{border-color:var(--teal)}
+  .cx-note{margin-top:8px;font-size:.78rem;color:var(--grey);line-height:1.4}
+  .empty{padding:44px 22px;text-align:center;color:var(--grey);font-size:.95rem}
+
+  .foot-note{font-size:.8rem;color:var(--grey);line-height:1.6;margin-top:6px;padding:16px 4px 0}
+  .foot-note b{color:var(--ink-2);font-weight:600}
+  .foot-note a{color:var(--teal);font-weight:600}
+
+  @media (max-width:960px){
+    .grid-kpi{grid-template-columns:1fr 1fr}
+    .grid-2{grid-template-columns:1fr}
+    .detail-inner{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    .tile .val{font-size:1.8rem}
+    .dash-head{align-items:flex-start;flex-direction:column}
+    .chip{display:none !important}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><img src="logo.png" alt="ThirtySecondLead"><span>ThirtySecondLead</span></a>
+    <div class="nav-right">
+      <span class="chip" id="clinicChip"></span>
+      <button class="btn btn-ghost" id="signOut" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── LOGIN ──────────────────────────────────────────── -->
+<div id="login" class="login-hero">
+  <form class="login-card" id="loginForm" novalidate>
+    <h1>Client dashboard</h1>
+    <p class="sub">Every enquiry, every call, every booking — live.</p>
+    <div class="login-err" id="loginErr" role="alert"></div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" autocomplete="username" required placeholder="you@yourclinic.com.au">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" type="submit" style="width:100%">Log in</button>
+    <p class="login-note">Your login is set up during onboarding. Locked out or need a hand? Email <a href="mailto:hello@thirtysecondlead.com">hello@thirtysecondlead.com</a> and we’ll sort it same-day.</p>
+  </form>
+</div>
+
+<!-- ── DASHBOARD ──────────────────────────────────────── -->
+<main id="dash">
+  <div class="wrap">
+    <div class="dash-head">
+      <div>
+        <h1 id="clinicName">—</h1>
+        <div class="live-line"><span class="pulse" aria-hidden="true"></span><span id="liveText">Loading…</span></div>
+      </div>
+      <div class="ranges" role="group" aria-label="Date range">
+        <button type="button" data-days="7" aria-pressed="false">7 days</button>
+        <button type="button" data-days="30" aria-pressed="true">30 days</button>
+        <button type="button" data-days="90" aria-pressed="false">90 days</button>
+      </div>
+    </div>
+
+    <section class="grid-kpi" id="kpis" aria-label="Key numbers">
+      <div class="card tile">
+        <div class="lbl">Avg. speed to lead</div>
+        <div class="val" id="kSpeed">—</div>
+        <div class="sub" id="kSpeedSub">form submitted → us dialling</div>
+      </div>
+      <div class="card tile">
+        <div class="lbl">Connect rate</div>
+        <div class="val" id="kConnect">—</div>
+        <div class="sub" id="kConnectSub">calls answered by a person</div>
+      </div>
+      <div class="card tile">
+        <div class="lbl">Enquiry → booking</div>
+        <div class="val" id="kBook">—</div>
+        <div class="sub" id="kBookSub">of all enquiries, booked</div>
+      </div>
+      <div class="card tile">
+        <div class="lbl">Appointments booked</div>
+        <div class="val" id="kNet">—</div>
+        <div class="sub" id="kNetSub">net of cancellations</div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <h2>The funnel</h2>
+        <p class="card-sub" id="funnelSub">enquiry → call → conversation → booking</p>
+        <div id="funnel"></div>
+        <div class="funnel-cx" id="funnelCx" style="display:none"></div>
+        <div class="funnel-note" id="funnelNote"></div>
+      </div>
+      <div class="card">
+        <h2>Day by day</h2>
+        <p class="card-sub" id="dailySub">enquiries in, appointments booked</p>
+        <div class="legend" aria-hidden="false">
+          <span class="li"><span class="sw" style="background:var(--c-series1)"></span>Enquiries</span>
+          <span class="li"><span class="sw" style="background:var(--c-series2)"></span>Booked</span>
+        </div>
+        <div class="chart-box" id="dailyChart"></div>
+      </div>
+    </section>
+
+    <section class="card log-card">
+      <div class="log-head">
+        <h2>Call log</h2>
+        <p class="card-sub" style="margin-bottom:0">Every call, what was said, and what happened. Click a row for the full summary — and to flag a cancellation.</p>
+      </div>
+      <div class="log-scroll">
+        <table class="log" id="logTable">
+          <thead>
+            <tr>
+              <th scope="col">When</th>
+              <th scope="col">Lead</th>
+              <th scope="col">Enquiry</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Speed</th>
+              <th scope="col">Length</th>
+              <th scope="col">Booking</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="logEmpty" style="display:none">No enquiries in this period yet. The moment one lands, it appears here — with the call already made.</div>
+    </section>
+
+    <p class="foot-note"><b>How we measure, honestly:</b> <b>Speed to lead</b> is the time from the form being submitted to our system dialling — the part we control; the phone network adds a few seconds of ring time on top. <b>Connect rate</b> counts a human answering — voicemail never counts. <b>Booked</b> means the booking tool confirmed a slot, not just that the assistant tried. Cancellations are the ones your front desk reports (one click on any booked call). Times shown in your clinic’s local time. Data handling: <a href="data.html">what we do with your data</a>.</p>
+  </div>
+</main>
+
+<div class="tooltip" id="tooltip" role="status" aria-hidden="true"></div>
+
+<script>
+(function () {
+  'use strict';
+  var API = 'https://lucassomadjaja.app.n8n.cloud/webhook';
+  var TOKEN_KEY = 'tsl_dash_token';
+  var state = { token: null, clinic: null, days: 30, data: null, timer: null, openRow: null };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;   // untrusted data → textContent, always
+    return n;
+  };
+
+  // ── formatting ─────────────────────────────────────────
+  function fmtSpeed(msVal) {
+    if (msVal === null || msVal === undefined) return '—';
+    var s = msVal / 1000;
+    return s < 10 ? (Math.round(s * 10) / 10) + 's' : Math.round(s) + 's';
+  }
+  function fmtDur(secs) {
+    if (!secs) return '—';
+    var m = Math.floor(secs / 60), s = secs % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  function fmtPct(x) { return x === null || x === undefined ? '—' : Math.round(x * 100) + '%'; }
+  function fmtWhen(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d)) return '—';
+    return d.toLocaleString('en-AU', { timeZone: 'Australia/Melbourne', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  }
+  function fmtClock(d) {
+    return d.toLocaleTimeString('en-AU', { timeZone: 'Australia/Melbourne', hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  }
+  var STATUS_LABEL = {
+    answered: 'Answered', voicemail: 'Voicemail', no_answer: 'No answer', busy: 'Busy',
+    in_progress: 'Calling now', not_called: 'Not called', dial_failed: 'Dial failed'
+  };
+
+  // ── auth plumbing ──────────────────────────────────────
+  function setView(loggedIn) {
+    $('login').style.display = loggedIn ? 'none' : 'flex';
+    $('dash').className = loggedIn ? 'show' : '';
+    $('signOut').className = 'btn btn-ghost' + (loggedIn ? ' show' : '');
+    $('clinicChip').className = 'chip' + (loggedIn ? ' show' : '');
+  }
+  function signOut(message) {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    state.token = null; state.data = null;
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+    setView(false);
+    if (message) { var e2 = $('loginErr'); e2.textContent = message; e2.className = 'login-err show'; }
+  }
+
+  $('loginForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Logging in…';
+    $('loginErr').className = 'login-err';
+    fetch(API + '/tsl-dash-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },   // CORS-simple: no preflight
+      body: JSON.stringify({ email: $('email').value, password: $('password').value })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.ok && j.token) {
+        state.token = j.token;
+        state.clinic = { id: j.clinic_id, name: j.clinic_name };
+        try { localStorage.setItem(TOKEN_KEY, j.token); } catch (e) {}
+        enterDash();
+      } else {
+        var e3 = $('loginErr');
+        e3.textContent = (j && j.error) || 'Login failed — please try again.';
+        e3.className = 'login-err show';
+      }
+    }).catch(function () {
+      var e4 = $('loginErr');
+      e4.textContent = 'Couldn’t reach the server. Check your connection and try again.';
+      e4.className = 'login-err show';
+    }).finally(function () { btn.disabled = false; btn.textContent = 'Log in'; });
+  });
+
+  $('signOut').addEventListener('click', function () { signOut(); });
+
+  // ── data loading ───────────────────────────────────────
+  function loadData(showSpinnerText) {
+    if (!state.token) return;
+    if (showSpinnerText) $('liveText').textContent = 'Loading…';
+    document.body.classList.add('refetching');    // hold previous render, dimmed — no skeleton
+    fetch(API + '/tsl-dash-data?token=' + encodeURIComponent(state.token) + '&days=' + state.days, { cache: 'no-store' })
+      .then(function (r) {
+        if (r.status === 401) { signOut('Your session expired — please log in again.'); throw new Error('unauth'); }
+        return r.json();
+      })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error('bad payload');
+        state.data = j;
+        state.clinic = j.clinic || state.clinic;
+        render();
+      })
+      .catch(function (err) {
+        if (String(err.message) !== 'unauth') $('liveText').textContent = 'Connection hiccup — retrying shortly.';
+      })
+      .finally(function () { document.body.classList.remove('refetching'); });
+  }
+
+  function enterDash() {
+    setView(true);
+    $('clinicChip').textContent = state.clinic && state.clinic.name ? state.clinic.name : 'Client';
+    $('clinicName').textContent = state.clinic && state.clinic.name ? state.clinic.name : 'Your dashboard';
+    loadData(true);
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(function () { loadData(false); }, 60000);   // live: refresh every 60s
+  }
+
+  // ── render ─────────────────────────────────────────────
+  function render() {
+    var d = state.data;
+    if (!d) return;
+    $('clinicChip').textContent = d.clinic.name;
+    $('clinicName').textContent = d.clinic.name;
+    $('liveText').textContent = 'Live — updated ' + fmtClock(new Date()) + ' · auto-refreshes every minute';
+
+    var f = d.funnel, k = d.kpis;
+
+    // KPI tiles
+    $('kSpeed').textContent = '';
+    if (k.avg_speed_ms === null) { $('kSpeed').textContent = '—'; }
+    else {
+      var sv = k.avg_speed_ms / 1000;
+      $('kSpeed').appendChild(document.createTextNode(sv < 10 ? String(Math.round(sv * 10) / 10) : String(Math.round(sv))));
+      $('kSpeed').appendChild(el('span', 'unit', 's'));
+    }
+    $('kSpeedSub').textContent = k.median_speed_ms !== null
+      ? 'median ' + fmtSpeed(k.median_speed_ms) + ' · form submitted → us dialling'
+      : 'form submitted → us dialling';
+    $('kConnect').textContent = fmtPct(k.connect_rate);
+    $('kConnectSub').textContent = f.picked_up + ' of ' + f.rung + ' calls answered by a person';
+    $('kBook').textContent = fmtPct(k.booking_rate);
+    $('kBookSub').textContent = f.booked + ' of ' + f.forms + ' enquiries became bookings';
+    $('kNet').textContent = String(k.net_bookings);
+    $('kNetSub').textContent = f.cancelled > 0
+      ? f.booked + ' booked − ' + f.cancelled + ' cancelled (reported by your desk)'
+      : f.booked + ' booked · no cancellations reported';
+
+    renderFunnel(f, d.not_called);
+    renderDaily(d.daily);
+    renderLog(d.calls);
+  }
+
+  // funnel — ordinal ramp (validated), bars scaled to forms
+  function renderFunnel(f, notCalled) {
+    var box = $('funnel');
+    box.textContent = '';
+    var stages = [
+      { label: 'Enquiries', value: f.forms, color: 'var(--funnel-1)', sub: null },
+      { label: 'Calls rung', value: f.rung, color: 'var(--funnel-2)', sub: pctOf(f.rung, f.forms, 'of enquiries') },
+      { label: 'Picked up', value: f.picked_up, color: 'var(--funnel-3)', sub: pctOf(f.picked_up, f.rung, 'of calls rung') },
+      { label: 'Booked', value: f.booked, color: 'var(--funnel-4)', sub: pctOf(f.booked, f.forms, 'of enquiries') }
+    ];
+    var max = Math.max(f.forms, 1);
+    stages.forEach(function (s) {
+      var row = el('div', 'funnel-row');
+      row.appendChild(el('div', 'flbl', s.label));
+      var track = el('div', 'funnel-track');
+      var bar = el('div', 'funnel-bar');
+      bar.style.background = s.color;
+      bar.style.width = Math.max((s.value / max) * 100, s.value > 0 ? 2 : 0.6) + '%';
+      track.appendChild(bar);
+      row.appendChild(track);
+      var val = el('div', 'funnel-val', String(s.value));
+      if (s.sub) val.appendChild(el('small', null, s.sub));
+      row.appendChild(val);
+      box.appendChild(row);
+    });
+
+    var cx = $('funnelCx');
+    if (f.cancelled > 0) {
+      cx.style.display = 'flex';
+      cx.textContent = '';
+      cx.appendChild(el('span', 'cx-dot'));
+      cx.appendChild(el('span', null, f.cancelled + ' of the ' + f.booked + ' booked later cancelled (reported by your desk) → ' + (f.booked - f.cancelled) + ' net'));
+    } else { cx.style.display = 'none'; }
+
+    var note = $('funnelNote');
+    note.textContent = '';
+    var gap = f.forms - f.rung;
+    if (gap > 0) {
+      var reasons = Object.keys(notCalled || {}).map(function (r) {
+        return notCalled[r] + '× ' + String(r).replace(/_/g, ' ');
+      }).join(', ');
+      var b = el('b', null, gap === 1 ? '1 enquiry wasn’t called: ' : gap + ' enquiries weren’t called: ');
+      note.appendChild(b);
+      note.appendChild(document.createTextNode(reasons + '. Nothing is hidden — if a number fails or a gate blocks a dial, it shows here.'));
+    } else {
+      note.appendChild(el('b', null, 'Every enquiry was called. '));
+      note.appendChild(document.createTextNode('Enquiries and calls rung match one-for-one for this period.'));
+    }
+  }
+  function pctOf(a, b, label) { return b > 0 ? Math.round((a / b) * 100) + '% ' + label : null; }
+
+  // daily chart — SVG grouped bars, ≤24px marks, 2px gaps, hairline grid,
+  // per-group hover tooltip (mark = hit target)
+  function renderDaily(daily) {
+    var box = $('dailyChart');
+    box.textContent = '';
+    var series = daily.slice();
+    var bucketLabel = 'day';
+    if (series.length > 31) {   // 90-day view → weekly buckets
+      bucketLabel = 'week';
+      var weeks = [];
+      for (var i = 0; i < series.length; i += 7) {
+        var chunk = series.slice(i, i + 7);
+        weeks.push({
+          date: chunk[0].date,
+          dateEnd: chunk[chunk.length - 1].date,
+          forms: chunk.reduce(function (s, x) { return s + x.forms; }, 0),
+          booked: chunk.reduce(function (s, x) { return s + x.booked; }, 0)
+        });
+      }
+      series = weeks;
+    }
+    $('dailySub').textContent = 'enquiries in, appointments booked — per ' + bucketLabel;
+
+    var W = 520, H = 190, padL = 30, padR = 6, padT = 8, padB = 24;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var maxV = Math.max(1, Math.max.apply(null, series.map(function (x) { return Math.max(x.forms, x.booked); })));
+    var yMax = Math.max(2, Math.ceil(maxV / 2) * 2);   // clean even ceiling
+    var n = series.length;
+    var band = innerW / n;
+    var barW = Math.min(10, Math.max(3, (band - 8) / 2));   // two bars + 2px gap, thin marks
+
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Bar chart of enquiries and bookings per ' + bucketLabel);
+
+    // hairline grid + clean y ticks (0, half, max)
+    [0, yMax / 2, yMax].forEach(function (v) {
+      var y = padT + innerH - (v / yMax) * innerH;
+      var line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('stroke', '#e7efef'); line.setAttribute('stroke-width', '1');
+      svg.appendChild(line);
+      var t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', padL - 7); t.setAttribute('y', y + 3.5);
+      t.setAttribute('text-anchor', 'end');
+      t.setAttribute('font-size', '9.5'); t.setAttribute('fill', '#7b9094');
+      t.setAttribute('font-family', 'Inter, sans-serif');
+      t.textContent = String(v);
+      svg.appendChild(t);
+    });
+
+    var teal = getComputedStyle(document.documentElement).getPropertyValue('--c-series1').trim() || '#00917d';
+    var coral = getComputedStyle(document.documentElement).getPropertyValue('--c-series2').trim() || '#e8482f';
+
+    series.forEach(function (pt, i) {
+      var cx0 = padL + i * band + band / 2;
+      var g = document.createElementNS(NS, 'g');
+      [['forms', teal, -1], ['booked', coral, 1]].forEach(function (spec) {
+        var v = pt[spec[0]];
+        var h = (v / yMax) * innerH;
+        var x = cx0 + (spec[2] < 0 ? -barW - 1 : 1);   // 2px surface gap between the pair
+        var r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', x); r.setAttribute('width', barW);
+        r.setAttribute('y', padT + innerH - h); r.setAttribute('height', Math.max(h, v > 0 ? 1.5 : 0));
+        r.setAttribute('fill', spec[1]);
+        if (h > 4) { r.setAttribute('rx', '2'); }      // rounded data-end (clipped square at baseline by height)
+        g.appendChild(r);
+      });
+      // hit target: full band, min 24px — bigger than the marks
+      var hit = document.createElementNS(NS, 'rect');
+      hit.setAttribute('x', padL + i * band); hit.setAttribute('width', Math.max(band, 0));
+      hit.setAttribute('y', 0); hit.setAttribute('height', H);
+      hit.setAttribute('fill', 'transparent');
+      hit.setAttribute('tabindex', '0');
+      var lbl = pt.dateEnd ? shortDate(pt.date) + ' – ' + shortDate(pt.dateEnd) : shortDate(pt.date);
+      hit.setAttribute('aria-label', lbl + ': ' + pt.forms + ' enquiries, ' + pt.booked + ' booked');
+      attachTooltip(hit, lbl, [['Enquiries', pt.forms, teal], ['Booked', pt.booked, coral]]);
+      g.appendChild(hit);
+      svg.appendChild(g);
+
+      // x labels: first, last, and every ~5th
+      var step = Math.ceil(n / 6);
+      if (i === 0 || i === n - 1 || i % step === 0) {
+        var tx = document.createElementNS(NS, 'text');
+        tx.setAttribute('x', cx0); tx.setAttribute('y', H - 7);
+        tx.setAttribute('text-anchor', 'middle');
+        tx.setAttribute('font-size', '9.5'); tx.setAttribute('fill', '#7b9094');
+        tx.setAttribute('font-family', 'Inter, sans-serif');
+        tx.textContent = shortDate(pt.date);
+        svg.appendChild(tx);
+      }
+    });
+    box.appendChild(svg);
+  }
+  function shortDate(iso) {
+    var p = String(iso).split('-');
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return Number(p[2]) + ' ' + months[Number(p[1]) - 1];
+  }
+
+  // one shared tooltip; values lead, line-keys for series
+  var tt = $('tooltip');
+  function attachTooltip(node, title, rows) {
+    function show(ev) {
+      tt.textContent = '';
+      tt.appendChild(el('div', 'tt-t', title));
+      rows.forEach(function (r) {
+        var row = el('div', 'tt-row');
+        var key = el('span', 'tt-key'); key.style.background = r[2];
+        row.appendChild(key);
+        row.appendChild(el('span', null, r[0]));
+        row.appendChild(el('span', 'tt-v', String(r[1])));
+        tt.appendChild(row);
+      });
+      tt.style.display = 'block';
+      position(ev);
+    }
+    function position(ev) {
+      var x = (ev.clientX || 0) + 14, y = (ev.clientY || 0) + 14;
+      if (ev.clientX === undefined && node.getBoundingClientRect) {
+        var b = node.getBoundingClientRect(); x = b.left + b.width / 2; y = b.top;
+      }
+      if (x + 170 > window.innerWidth) x = window.innerWidth - 180;
+      tt.style.left = x + 'px'; tt.style.top = y + 'px';
+    }
+    node.addEventListener('pointermove', show);
+    node.addEventListener('pointerleave', function () { tt.style.display = 'none'; });
+    node.addEventListener('focus', show);
+    node.addEventListener('blur', function () { tt.style.display = 'none'; });
+  }
+
+  // call log — the table IS the table view; rows expand for summary/transcript
+  function renderLog(calls) {
+    var body = $('logBody');
+    body.textContent = '';
+    $('logEmpty').style.display = calls.length ? 'none' : 'block';
+    calls.forEach(function (c) {
+      var tr = el('tr', 'log-row');
+      tr.setAttribute('aria-expanded', 'false');
+      tr.tabIndex = 0;
+
+      tr.appendChild(el('td', 'num', fmtWhen(c.t)));
+
+      var leadTd = el('td', 'lead-cell');
+      leadTd.appendChild(el('b', null, c.lead_name || '—'));
+      leadTd.appendChild(el('span', null, c.lead_phone || ''));
+      tr.appendChild(leadTd);
+
+      tr.appendChild(el('td', null, c.service || '—'));
+
+      var stTd = el('td');
+      var chip = el('span', 'stchip st-' + c.status);
+      chip.appendChild(el('span', 'dot'));
+      chip.appendChild(document.createTextNode(STATUS_LABEL[c.status] || c.status));
+      stTd.appendChild(chip);
+      tr.appendChild(stTd);
+
+      tr.appendChild(el('td', 'num', fmtSpeed(c.speed_ms)));
+      tr.appendChild(el('td', 'num', fmtDur(c.duration_secs)));
+
+      var bkTd = el('td');
+      if (c.booked && c.cancelled) {
+        var b1 = el('span', 'bkchip bk-cx', '✕ ' + (c.appointment_time || 'Cancelled'));
+        b1.title = 'Cancelled';
+        bkTd.appendChild(b1);
+      } else if (c.booked) {
+        bkTd.appendChild(el('span', 'bkchip bk-yes', '✓ ' + (c.appointment_time || 'Booked')));
+      } else {
+        bkTd.appendChild(el('span', null, '—'));
+      }
+      tr.appendChild(bkTd);
+
+      var detail = el('tr');
+      var dtd = el('td', 'detail-td');
+      dtd.colSpan = 7;
+      detail.style.display = 'none';
+      detail.appendChild(dtd);
+
+      tr.addEventListener('click', function () { toggleRow(tr, detail, dtd, c); });
+      tr.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleRow(tr, detail, dtd, c); }
+      });
+
+      body.appendChild(tr);
+      body.appendChild(detail);
+    });
+  }
+
+  function toggleRow(tr, detail, dtd, c) {
+    var open = detail.style.display !== 'none';
+    if (state.openRow && state.openRow !== detail) {
+      state.openRow.style.display = 'none';
+      if (state.openRow.previousSibling) state.openRow.previousSibling.setAttribute('aria-expanded', 'false');
+    }
+    detail.style.display = open ? 'none' : '';
+    tr.setAttribute('aria-expanded', open ? 'false' : 'true');
+    state.openRow = open ? null : detail;
+    if (open) return;
+
+    dtd.textContent = '';
+    var inner = el('div', 'detail-inner');
+
+    var main = el('div');
+    main.appendChild(el('h4', null, 'Call summary'));
+    main.appendChild(el('p', 'summary-p', c.summary || 'No summary available for this call.'));
+    if (c.transcript) {
+      main.appendChild(el('h4', null, 'Transcript')).style.marginTop = '14px';
+      main.appendChild(el('div', 'transcript', c.transcript));
+    }
+    inner.appendChild(main);
+
+    var side = el('div', 'detail-side');
+    side.appendChild(el('h4', null, 'Details'));
+    var kv = function (k2, v2) {
+      var p = el('div', 'kv');
+      p.appendChild(el('b', null, k2 + ': '));
+      p.appendChild(document.createTextNode(v2));
+      return p;
+    };
+    side.appendChild(kv('Form submitted', fmtWhen(c.form_submitted_at)));
+    if (c.speed_ms !== null) side.appendChild(kv('We dialled after', fmtSpeed(c.speed_ms)));
+    if (c.sentiment) side.appendChild(kv('Caller sentiment', c.sentiment));
+    if (c.appointment_time) side.appendChild(kv('Appointment', c.appointment_time));
+    if (c.cancelled && c.cancel_note) side.appendChild(kv('Cancellation note', c.cancel_note));
+
+    if (c.booked) {
+      var btn = el('button', 'cx-btn' + (c.cancelled ? ' reinstate' : ''),
+        c.cancelled ? 'Reinstate this booking' : 'Mark this booking cancelled');
+      btn.type = 'button';
+      btn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        var note = '';
+        if (!c.cancelled) {
+          note = window.prompt('Optional — why was it cancelled? (helps us tune the follow-up)', '') || '';
+          if (note === null) return;
+        }
+        btn.disabled = true; btn.textContent = 'Saving…';
+        fetch(API + '/tsl-dash-update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ token: state.token, call_id: c.call_id, cancelled: !c.cancelled, note: note })
+        }).then(function (r) { return r.json(); }).then(function (j) {
+          if (j && j.ok) { loadData(false); }
+          else { btn.disabled = false; btn.textContent = 'Try again'; }
+        }).catch(function () { btn.disabled = false; btn.textContent = 'Try again'; });
+      });
+      side.appendChild(btn);
+      side.appendChild(el('p', 'cx-note', c.cancelled
+        ? 'Reinstating puts this appointment back in your booked numbers.'
+        : 'This keeps your dashboard honest — cancellations come off the booked total the moment you flag them.'));
+    }
+    inner.appendChild(side);
+    dtd.appendChild(inner);
+  }
+
+  // ── range filter (scopes everything below it) ──────────
+  Array.prototype.forEach.call(document.querySelectorAll('.ranges button'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.ranges button'), function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
+      state.days = parseInt(b.getAttribute('data-days'), 10) || 30;
+      loadData(true);
+    });
+  });
+
+  // ── boot ───────────────────────────────────────────────
+  var saved = null;
+  try { saved = localStorage.getItem(TOKEN_KEY); } catch (e) {}
+  if (saved && saved.length >= 20) {
+    state.token = saved;
+    enterDash();   // name arrives with the first payload
+  } else {
+    setView(false);
+  }
+})();
+</script>
+</body>
+</html>
