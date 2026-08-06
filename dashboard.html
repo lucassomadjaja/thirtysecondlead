@@ -369,6 +369,24 @@
     if (isNaN(d)) return '—';
     return d.toLocaleString('en-AU', { timeZone: 'Australia/Melbourne', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
   }
+  var BK_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var BK_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  // Booking times arrive in two shapes: a bare local ISO (2026-08-07T09:00:00 —
+  // clinic wall time, no offset) and, from some tool results, an already-worded
+  // string. A bare ISO must NOT be run through toLocaleString: there is no
+  // offset to convert FROM, so on a non-Melbourne browser it would silently
+  // shift the appointment by hours. Read the parts and word them directly.
+  function fmtBooking(v) {
+    if (!v) return '';
+    var m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+    if (!m) return String(v);                      // already worded — leave it
+    var y = +m[1], mo = +m[2] - 1, da = +m[3], hh = +m[4], mi = +m[5];
+    if (mo < 0 || mo > 11) return String(v);
+    var dow = BK_DAYS[new Date(Date.UTC(y, mo, da)).getUTCDay()];
+    var h12 = hh % 12; if (h12 === 0) h12 = 12;
+    return dow + ', ' + BK_MONTHS[mo] + ' ' + da + ', ' + y +
+           ' at ' + h12 + ':' + (mi < 10 ? '0' + mi : mi) + ' ' + (hh < 12 ? 'AM' : 'PM');
+  }
   function fmtClock(d) {
     return d.toLocaleTimeString('en-AU', { timeZone: 'Australia/Melbourne', hour: 'numeric', minute: '2-digit', second: '2-digit' });
   }
@@ -766,11 +784,11 @@
 
       var bkTd = el('td');
       if (c.booked && c.cancelled) {
-        var b1 = el('span', 'bkchip bk-cx', '✕ ' + (c.appointment_time || 'Cancelled'));
+        var b1 = el('span', 'bkchip bk-cx', '✕ ' + (fmtBooking(c.appointment_time) || 'Cancelled'));
         b1.title = 'Cancelled';
         bkTd.appendChild(b1);
       } else if (c.booked) {
-        bkTd.appendChild(el('span', 'bkchip bk-yes', '✓ ' + (c.appointment_time || 'Booked')));
+        bkTd.appendChild(el('span', 'bkchip bk-yes', '✓ ' + (fmtBooking(c.appointment_time) || 'Booked')));
       } else {
         bkTd.appendChild(el('span', null, '—'));
       }
@@ -855,9 +873,9 @@
     // against. Different label, on purpose.
     // Neither → an em dash, so the row reads as genuinely empty, not omitted.
     if (c.appointment_time && c.booked) {
-      side.appendChild(kv('Appointment', c.appointment_time));
+      side.appendChild(kv('Appointment', fmtBooking(c.appointment_time)));
     } else if (c.appointment_time) {
-      side.appendChild(kv('Customer preference', c.appointment_time));
+      side.appendChild(kv('Customer preference', fmtBooking(c.appointment_time)));
     } else {
       side.appendChild(kv('Appointment', '—'));
     }
