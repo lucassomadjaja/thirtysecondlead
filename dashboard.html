@@ -424,13 +424,41 @@
       .finally(function () { document.body.classList.remove('refetching'); });
   }
 
+  // ── polling ────────────────────────────────────────────
+  // Every tick is a billed n8n execution. A tab left open on a 60s interval
+  // is 1,440 executions a day and does not stop when nobody is looking at it:
+  // that alone ate 957 of the first 1,066 executions on this account (90%),
+  // while the entire call pipeline used 109. So: only poll while the tab is
+  // actually visible, and poll slowly. Clinic data changes a few times a day,
+  // not a few times a minute.
+  var POLL_MS = 180000;   // 3 minutes while visible
+
+  function startPolling() {
+    stopPolling();
+    if (document.hidden) return;                 // nobody is looking — do not bill
+    state.timer = setInterval(function () {
+      if (document.hidden) { stopPolling(); return; }
+      loadData(false);
+    }, POLL_MS);
+  }
+
+  function stopPolling() {
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!state.token) return;
+    if (document.hidden) { stopPolling(); return; }
+    loadData(false);        // catch up once on return, then resume the slow loop
+    startPolling();
+  });
+
   function enterDash() {
     setView(true);
     $('clinicChip').textContent = state.clinic && state.clinic.name ? state.clinic.name : 'Client';
     $('clinicName').textContent = state.clinic && state.clinic.name ? state.clinic.name : 'Your dashboard';
     loadData(true);
-    if (state.timer) clearInterval(state.timer);
-    state.timer = setInterval(function () { loadData(false); }, 60000);   // live: refresh every 60s
+    startPolling();
   }
 
   // ── render ─────────────────────────────────────────────
@@ -448,7 +476,7 @@
 
     $('clinicChip').textContent = d.clinic.name;
     $('clinicName').textContent = d.clinic.name;
-    $('liveText').textContent = 'Live — updated ' + fmtClock(new Date()) + ' · auto-refreshes every minute';
+    $('liveText').textContent = 'Live — updated ' + fmtClock(new Date()) + ' · refreshes while this tab is open';
 
     var f = d.funnel, k = d.kpis;
 
